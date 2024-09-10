@@ -1,4 +1,4 @@
-from FLNKS import ccat
+import csv
 import psycopg2
 
 
@@ -68,71 +68,50 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 );
 """)
 
-import csv
 
 convert_null = lambda x: None if x == "NULL" else x
-convert_int = lambda x: None if x == "NULL" else int(x)
-convert_float = lambda x: None if x == "NULL" else float(x)
+def convert_null(x): return None if x == "NULL" else x
+def convert_int(x): return None if x == "NULL" else int(x)
+def convert_float(x): return None if x == "NULL" else float(x)
+
 
 # Ouvrir le fichier CSV
-with open('db/ais_information_vessel_ptutore.csv', 'r') as ais_vessel:
-    reader = csv.reader(ais_vessel, delimiter=";")
-    
+with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
+    reader = csv.reader(f, delimiter=";")
+
     # Sauter la ligne d'en-tête
     header = next(reader)
-    
+
     # Afficher la ligne d'en-tête
     print("En-tête : ", header)
-    
+
     # Lire et afficher chaque ligne du fichier CSV
-    # Remplacer les cellules avec NULL par None
     for row in reader:
-<<<<<<< HEAD
         for cell in range(len(row)):
-            row[cell] = ccat.str_to_none(row[cell])
-            row[cell] = ccat.str_to_nbr(row[cell])
-        print(row)
-    
+            row[cell] = edit_str.str_to_none(row[cell])
+            row[cell] = edit_str.str_to_nbr(row[cell])
 
-# Importer le fichier CSV pour la table ais_positions_noumea
-with open('db/ais_positions_noumea_ptutore.csv', 'r') as ais_noumea:
-    reader = csv.reader(ais_noumea, delimiter=';')
-
-=======
-        print(row[0].split(";"))
-
-         #TODO : requete SQL pour ajouter valuers voulues
-
-
+         # TODO : requete SQL pour ajouter valuers voulues
 
 
 # Importer le fichier CSV pour la table ais_positions_noumea
 with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
 
-    reader = csv.reader(f)
-    
->>>>>>> 989a5275379f48eb9d8b19fb293937176cdbda6c
+    reader = csv.reader(f, delimiter=";")
+
     # Sauter la ligne d'en-tête
     header = next(reader)
-    
+
     # Afficher la ligne d'en-tête
     print("En-tête : ", header)
-    
+
     # Lire et afficher chaque ligne du fichier CSV
-<<<<<<< HEAD
-    # Remplacer les cellules avec NULL par None
     for row in reader:
         for cell in range(len(row)):
-            row[cell] = ccat.str_to_none(row[cell])
-            row[cell] = ccat.str_to_nbr(row[cell])
-        print(row)
-    
-=======
-    for row in reader:
-        print(row[0].split(";"))
+            row[cell] = edit_str.str_to_none(row[cell])
+            row[cell] = edit_str.str_to_nbr(row[cell])
 
-        #TODO : requete SQL pour ajouter valuers voulues
->>>>>>> 989a5275379f48eb9d8b19fb293937176cdbda6c
+        # TODO : requete SQL pour ajouter valuers voulues
 
 # Valider et fermer
 conn.commit()
