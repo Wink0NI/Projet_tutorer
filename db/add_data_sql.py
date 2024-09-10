@@ -66,6 +66,10 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 
 import csv
 
+convert_null = lambda x: None if x == "NULL" else x
+convert_int = lambda x: None if x == "NULL" else int(x)
+convert_float = lambda x: None if x == "NULL" else float(x)
+
 # Ouvrir le fichier CSV
 with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
     reader = csv.reader(f)
@@ -84,8 +88,18 @@ with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
 
 # Importer le fichier CSV pour la table ais_positions_noumea
 with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
-    next(f)  # Saute la ligne d'en-tête
-    cur.copy_expert("COPY ais_positions_noumea FROM STDIN WITH CSV HEADER NULL ''", f)
+
+    reader = csv.reader(f)
+    
+    # Sauter la ligne d'en-tête
+    header = next(reader)
+    
+    # Afficher la ligne d'en-tête
+    print("En-tête : ", header)
+    
+    # Lire et afficher chaque ligne du fichier CSV
+    for row in reader:
+        print(row[0].split(";"))
 
 # Valider et fermer
 conn.commit()
