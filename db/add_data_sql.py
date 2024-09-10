@@ -86,6 +86,9 @@ with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
     for row in reader:
         print(row[0].split(";"))
 
+         #TODO : requete SQL pour ajouter valuers voulues
+
+
 
 
 # Importer le fichier CSV pour la table ais_positions_noumea
@@ -102,6 +105,8 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
     # Lire et afficher chaque ligne du fichier CSV
     for row in reader:
         print(row[0].split(";"))
+
+        #TODO : requete SQL pour ajouter valuers voulues
 
 # Valider et fermer
 conn.commit()
