@@ -12,6 +12,7 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 # Créer les tables
+cur.execute("DROP TABLE IF EXISTS ais_information_vessel")
 cur.execute("""
 CREATE TABLE IF NOT EXISTS ais_information_vessel (
     mmsi BIGINT,
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
 );
 """)
 
+cur.execute("DROP TABLE IF EXISTS ais_positions_noumea")
 cur.execute("""
 CREATE TABLE IF NOT EXISTS ais_positions_noumea (
     mmsi INT NOT NULL,
