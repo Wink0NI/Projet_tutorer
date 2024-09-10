@@ -1,4 +1,6 @@
+from FLNKS import ccat
 import psycopg2
+
 
 # Connexion à la base de données PostgreSQL
 conn = psycopg2.connect(
@@ -67,8 +69,8 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 import csv
 
 # Ouvrir le fichier CSV
-with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
-    reader = csv.reader(f)
+with open('db/ais_information_vessel_ptutore.csv', 'r') as ais_vessel:
+    reader = csv.reader(ais_vessel, delimiter=";")
     
     # Sauter la ligne d'en-tête
     header = next(reader)
@@ -77,15 +79,32 @@ with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
     print("En-tête : ", header)
     
     # Lire et afficher chaque ligne du fichier CSV
+    # Remplacer les cellules avec NULL par None
     for row in reader:
-        print(row[0].split(";"))
-
-
+        for cell in range(len(row)):
+            row[cell] = ccat.str_to_none(row[cell])
+            row[cell] = ccat.str_to_nbr(row[cell])
+        print(row)
+    
 
 # Importer le fichier CSV pour la table ais_positions_noumea
-with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
-    next(f)  # Saute la ligne d'en-tête
-    cur.copy_expert("COPY ais_positions_noumea FROM STDIN WITH CSV HEADER NULL ''", f)
+with open('db/ais_positions_noumea_ptutore.csv', 'r') as ais_noumea:
+    reader = csv.reader(ais_noumea, delimiter=';')
+
+    # Sauter la ligne d'en-tête
+    header = next(reader)
+    
+    # Afficher la ligne d'en-tête
+    print("En-tête : ", header)
+    
+    # Lire et afficher chaque ligne du fichier CSV
+    # Remplacer les cellules avec NULL par None
+    for row in reader:
+        for cell in range(len(row)):
+            row[cell] = ccat.str_to_none(row[cell])
+            row[cell] = ccat.str_to_nbr(row[cell])
+        print(row)
+    
 
 # Valider et fermer
 conn.commit()
