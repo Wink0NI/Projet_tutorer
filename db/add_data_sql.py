@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
     imo BIGINT,
     callsign VARCHAR(255),
     shipname VARCHAR(255),
-    shiptype VARCHAR(255),
+    shiptype INT,
     to_port INT,
     to_bow INT,
     to_stern INT,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
     eta TIMESTAMP,
     draught FLOAT,
     destination VARCHAR(255),
-    status VARCHAR(255),
+    status INT,
     turn FLOAT,
     speed FLOAT,
     lat FLOAT,
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
     alt FLOAT,
     count INT,
     msg_types VARCHAR(255),
-    channels VARCHAR(255)
+    channels INT
 );
 """)
 
