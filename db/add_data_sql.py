@@ -1,6 +1,13 @@
 import csv
 import psycopg2
-from functions import edit_str
+import sys
+import os
+
+# Ajouter le chemin du dossier parent pour accéder à functions
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from functions.edit_str import *
+
 
 # Connexion à la base de données PostgreSQL
 conn = psycopg2.connect(
@@ -66,45 +73,47 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 );
 """)
 
-import csv
 
-# Ouvrir le fichier CSV
-with open('db/ais_information_vessel_ptutore.csv', 'r') as ais_vessel:
-    reader = csv.reader(ais_vessel, delimiter=";")
-    
-    # Sauter la ligne d'en-tête
-    header = next(reader)
-    
-    # Afficher la ligne d'en-tête
-    print("En-tête : ", header)
-    
-    # Lire et afficher chaque ligne du fichier CSV
-    # Remplacer les cellules avec NULL par None
-    for row in reader:
-        for cell in range(len(row)):
-            row[cell] = edit_str.str_to_none(row[cell])
-            row[cell] = edit_str.str_to_nbr(row[cell])
-        print(row)
-    
-
-# Importer le fichier CSV pour la table ais_positions_noumea
-with open('db/ais_positions_noumea_ptutore.csv', 'r') as ais_noumea:
-    reader = csv.reader(ais_noumea, delimiter=';')
+# Insérer les données du fichier ais_information_vessel_ptutore.csv
+with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
+    reader = csv.reader(f, delimiter=";")
 
     # Sauter la ligne d'en-tête
     header = next(reader)
-    
-    # Afficher la ligne d'en-tête
     print("En-tête : ", header)
-    
-    # Lire et afficher chaque ligne du fichier CSV
-    # Remplacer les cellules avec NULL par None
+
+    # Lire et traiter chaque ligne
     for row in reader:
-        for cell in range(len(row)):
-            row[cell] = edit_str.str_to_none(row[cell])
-            row[cell] = edit_str.str_to_nbr(row[cell])
-        print(row)
-    
+        # Transformer les données
+        row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
+        row = [str_to_nbr(cell) for cell in row]   # Utilisation de str_to_nbr
+
+        # TODO : Adapter la requête d'insertion aux colonnes de la table
+        insert_query = """
+        INSERT INTO ais_information_vessel (col1, col2, col3, ...) VALUES (%s, %s, %s, ...)
+        """
+        cur.execute(insert_query, row)
+
+# Insérer les données du fichier ais_positions_noumea_ptutore.csv
+with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
+    reader = csv.reader(f, delimiter=";")
+
+    # Sauter la ligne d'en-tête
+    header = next(reader)
+    print("En-tête : ", header)
+
+    # Lire et traiter chaque ligne
+    for row in reader:
+        # Transformer les données
+        row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
+        row = [str_to_nbr(cell) for cell in row]   # Utilisation de str_to_nbr
+
+        # TODO : Adapter la requête d'insertion aux colonnes de la table
+        insert_query = """
+        INSERT INTO ais_positions_noumea (col1, col2, col3, ...) VALUES (%s, %s, %s, ...)
+        """
+        cur.execute(insert_query, row)
+
 
 # Valider et fermer
 conn.commit()
