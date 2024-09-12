@@ -20,6 +20,8 @@ conn = psycopg2.connect(
 # Créer un curseur
 cur = conn.cursor()
 
+cur.execute("DROP TABLE IF EXISTS ais_information_vessel")
+cur.execute("DROP TABLE IF EXISTS ais_positions_noumea")
 # Créer les tables
 cur.execute("""
 CREATE TABLE IF NOT EXISTS ais_information_vessel (
@@ -68,15 +70,14 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
     lon FLOAT,
     course FLOAT,
     heading FLOAT,
-    geom VARCHAR(255), 
-    PRIMARY KEY (mmsi, received_at)
+    geom VARCHAR(255)
 );
 """)
 
 conn.commit()
 
 
-
+lines = 0
 
 # Insérer les données du fichier ais_information_vessel_ptutore.csv
 with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
@@ -108,11 +109,14 @@ INSERT INTO ais_information_vessel (
 """
         # Executer la requête d'insertion
         cur.execute(insert_query, row)
+        lines += 1
 
-print("SQL: Insertion de données de ais_information_vessel_ptutore terminée...")
+print(f"SQL: Insertion de {lines} données de ais_information_vessel_ptutore terminée...")
 
 # Valider et fermer
 conn.commit()
+
+lines = 0
 
 # Insérer les données du fichier ais_positions_noumea_ptutore.csv
 with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
@@ -139,13 +143,15 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
             mmsi, received_at, station_id, msg_id, status, turn, speed, lat, lon, course, heading, geom
         ) VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-        ) ON CONFLICT DO NOTHING
+        ) 
         """
+        
         cur.execute(insert_query, row)
+        lines += 1
 
 conn.commit()
 
 cur.close()
 conn.close()
 
-print("SQL: Insertion de donnée terminée...")
+print(f"SQL: Insertion de {lines} donnée dans la table ais_positions_noumea terminée...")
