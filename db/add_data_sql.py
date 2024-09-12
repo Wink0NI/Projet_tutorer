@@ -1,3 +1,4 @@
+
 import csv
 import psycopg2
 import sys
@@ -7,7 +8,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from functions.edit_str import *
-
 
 # Connexion à la base de données PostgreSQL
 conn = psycopg2.connect(
@@ -47,10 +47,10 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
     lon FLOAT,
     course FLOAT,
     heading FLOAT,
-    aid_type VARCHAR(50),
+    aid_type INT,
     alt FLOAT,
     count INT,
-    msg_types VARCHAR(255),
+    msg_types INT,
     channels INT
 );
 """)
@@ -73,11 +73,17 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 );
 """)
 
+conn.commit()
+
+
+
 
 # Insérer les données du fichier ais_information_vessel_ptutore.csv
 with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
     reader = csv.reader(f, delimiter=";")
 
+    print("SQL: Insertion de données de ais_information_vessel_ptutore en cours...")
+
     # Sauter la ligne d'en-tête
     header = next(reader)
     print("En-tête : ", header)
@@ -87,17 +93,32 @@ with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
         # Transformer les données
         row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
         row = [str_to_nbr(cell) for cell in row]   # Utilisation de str_to_nbr
-
+        row[14] = convert_custom_datetime(row[14])
         # TODO : Adapter la requête d'insertion aux colonnes de la table
         insert_query = """
-        INSERT INTO ais_information_vessel (col1, col2, col3, ...) VALUES (%s, %s, %s, ...)
-        """
+INSERT INTO ais_information_vessel (
+    mmsi, signalpower, ppm, received_at, station_id, msg_id, imo, callsign, shipname, shiptype, 
+    to_port, to_bow, to_stern, to_starboard, eta, draught, destination, status, turn, speed, 
+    lat, lon, course, heading, aid_type, alt, count, msg_types, channels
+) VALUES (
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+    %s, %s, %s, %s, %s, %s, %s, %s, %s
+) ON CONFLICT DO NOTHING
+"""
+        # Executer la requête d'insertion
         cur.execute(insert_query, row)
+
+print("SQL: Insertion de données de ais_information_vessel_ptutore terminée...")
+
+# Valider et fermer
+conn.commit()
 
 # Insérer les données du fichier ais_positions_noumea_ptutore.csv
 with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
     reader = csv.reader(f, delimiter=";")
 
+    print("SQL: Insertion de données de ais_positions_noumea_ptutore en cours...")
     # Sauter la ligne d'en-tête
     header = next(reader)
     print("En-tête : ", header)
@@ -107,15 +128,24 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
         # Transformer les données
         row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
         row = [str_to_nbr(cell) for cell in row]   # Utilisation de str_to_nbr
+        
+
+
 
         # TODO : Adapter la requête d'insertion aux colonnes de la table
+        # example of row[227175980, '07/05/2024 22:03', 0, None, None, None, 3.5, -22.291563, 166.3951, 265.5, 511, None]
         insert_query = """
-        INSERT INTO ais_positions_noumea (col1, col2, col3, ...) VALUES (%s, %s, %s, ...)
+        INSERT INTO ais_positions_noumea (
+            mmsi, received_at, station_id, msg_id, status, turn, speed, lat, lon, course, heading, geom
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        ) ON CONFLICT DO NOTHING
         """
         cur.execute(insert_query, row)
 
-
-# Valider et fermer
 conn.commit()
+
 cur.close()
 conn.close()
+
+print("SQL: Insertion de donnée terminée...")
