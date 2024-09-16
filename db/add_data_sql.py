@@ -92,7 +92,11 @@ with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
     for row in reader:
         # Transformer les données
         row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
-        row = [str_to_nbr(cell) for cell in row]   # Utilisation de str_to_nbr
+        row = [str_to_nbr(cell) for cell in row]
+    if row[3] is not None:
+        row[3] = convert_custom_datetime(row[3])
+    
+    if row[14] is not None:
         row[14] = convert_custom_datetime(row[14])
         # TODO : Adapter la requête d'insertion aux colonnes de la table
         insert_query = """
