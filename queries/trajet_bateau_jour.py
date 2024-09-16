@@ -17,6 +17,7 @@ cur.execute("""
     FROM ais_positions_noumea apn
     JOIN ais_information_vessel aiv ON apn.mmsi = aiv.mmsi
     WHERE apn.mmsi = 209591000
+    AND apn.speed > 0.5
     AND apn.received_at::date = '2024-03-14'
     ORDER BY apn.received_at
 """)

@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
 import psycopg2
+import os
+
 
 app = Flask(__name__)
+
 
 # Configuration de la connexion à la base de données
 DATABASE_CONFIG = {
@@ -17,7 +20,7 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    return 'Bienvenue sur l\'interface Flask pour la base de données AIS'
+    return render_template("index.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
