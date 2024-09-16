@@ -94,11 +94,11 @@ with open('db/ais_information_vessel_ptutore.csv', 'r') as f:
         # Transformer les données
         row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
         row = [str_to_nbr(cell) for cell in row]
-    if row[3] is not None:
-        row[3] = convert_custom_datetime(row[3])
-    
-    if row[14] is not None:
-        row[14] = convert_custom_datetime(row[14])
+        if row[3] is not None:
+            row[3] = convert_custom_datetime(row[3])
+        
+        if row[14] is not None:
+            row[14] = convert_custom_datetime(row[14])
         # TODO : Adapter la requête d'insertion aux colonnes de la table
         insert_query = """
 INSERT INTO ais_information_vessel (
@@ -136,10 +136,8 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
         # Transformer les données
         row = [str_to_none(cell) for cell in row]  # Utilisation de str_to_none
         row = [str_to_nbr(cell) for cell in row]   # Utilisation de str_to_nbr
-        
-
-
-
+        if row[1] is not None:
+            row[1] = convert_custom_datetime(row[1])
         # TODO : Adapter la requête d'insertion aux colonnes de la table
         # example of row[227175980, '07/05/2024 22:03', 0, None, None, None, 3.5, -22.291563, 166.3951, 265.5, 511, None]
         insert_query = """
@@ -149,7 +147,7 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
         ) 
         """
-        
+
         cur.execute(insert_query, row)
         lines += 1
 
