@@ -1,0 +1,24 @@
+import folium
+
+# Créer une carte centrée sur Nouméa (Nouvelle-Calédonie)
+carte = folium.Map(location=[-22.2711, 166.4416], zoom_start=12)  # Nouméa
+
+# URL d'une icône en forme de bateau
+boat_icon_url = 'boat.webp'  # Remplacez cette URL par une URL valide
+
+# Ajouter un marqueur à Nouméa avec des informations supplémentaires et une icône en forme de bateau
+folium.Marker(
+    location=[-22.2711, 166.4416],
+    popup=f'Nouméa<br>Coordonnées: (-22.2711, 166.4416)',
+    icon=folium.CustomIcon(icon_image=boat_icon_url, icon_size=(120, 120))
+).add_to(carte)
+
+# Ajouter un deuxième marqueur à Mont-Dore avec des informations supplémentaires et une icône différente
+folium.Marker(
+    location=[-22.2625, 166.5717],
+    popup=f'Mont-Dore<br>Coordonnées: (-22.2625, 166.5717)',
+    icon=folium.Icon(color='green', icon='star')
+).add_to(carte)
+
+# Afficher la carte
+carte.save('ma_carte.html')  # Sauvegarder en HTML pour l'afficher dans un navigateur
