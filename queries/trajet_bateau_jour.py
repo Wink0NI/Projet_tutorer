@@ -12,7 +12,7 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 # Exécuter la requête SQL pour obtenir les positions du bateau le 20 avril 2024
-cur.execute("""
+cur.execute(f"""
     SELECT apn.lat, apn.lon, apn.received_at, shipname
     FROM ais_positions_noumea apn
     JOIN ais_information_vessel aiv ON apn.mmsi = aiv.mmsi
@@ -64,6 +64,6 @@ if rows:
     ).add_to(carte)
 
     # Afficher la carte
-    carte.save('trajet_bateau.html')  # Sauvegarder en HTML pour l'afficher dans un navigateur
+    carte.save('map/trajet_bateau.html')  # Sauvegarder en HTML pour l'afficher dans un navigateur
 else:
     print("Aucune donnée disponible pour le bateau avec MMSI 209135000 le 20 avril 2024.")

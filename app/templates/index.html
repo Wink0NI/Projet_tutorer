@@ -1,12 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenue sur l'interface Flask</title>
+    <title>Recherche de Bateau</title>
+    <!-- Inclure Bulma CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <!-- Inclure SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
+
 <body>
-    <h1>Bienvenue sur l'interface Flask pour la base de données AIS</h1>
-    <p>Cette page est servie par Flask.</p>
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Recherche de Bateau</h1>
+            <form id="searchForm">
+                <div class="field">
+                    <label class="label">MMSI du bateau</label>
+                    <div class="control">
+                        <input class="input" type="text" id="mmsi" placeholder="Entrez le MMSI" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Date</label>
+                    <div class="control">
+                        <input class="input" type="text" id="date" placeholder="JJ/MM/AAAA" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" id="includeStops">
+                            Inclure les arrêts
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control">
+                    <button class="button is-primary" type="submit">Rechercher</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="contenu"></div>
+    </section>
+
+    <!-- Inclure SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Empêche le formulaire de se soumettre normalement
+
+            // Récupérer les valeurs des champs du formulaire
+            const mmsi = document.getElementById('mmsi').value;
+            const date = document.getElementById('date').value;
+            const includeStops = document.getElementById('includeStops').checked;
+
+            // Vérifier que la date est au bon format (JJ/MM/AAAA)
+            const datePattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            if (!datePattern.test(date)) {
+                Swal.fire({
+                    title: 'Erreur',
+                    text: 'Veuillez entrer une date au format JJ/MM/AAAA.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+
+
+            // Afficher un message de succès avec les valeurs du formulaire
+            Swal.fire({
+                title: 'Recherche effectuée',
+                text: `MMSI: ${mmsi}\nDate: ${date}\nInclure les arrêts: ${includeStops}`,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+
+
+
+
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('http://localhost:5000/get_map')
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data); // Affiche le contenu dans la console pour vérification
+                    document.getElementById('contenu').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+        });
+
+
+
+    </script>
 </body>
+
 </html>
