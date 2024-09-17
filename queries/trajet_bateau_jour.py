@@ -10,27 +10,14 @@ conn = psycopg2.connect(
     password="admin"
 )
 cur = conn.cursor()
-<<<<<<< Updated upstream
-=======
-variable = "appel de fonction du formulaire"
->>>>>>> Stashed changes
 # Exécuter la requête SQL pour obtenir les positions du bateau le 20 avril 2024
 cur.execute(f"""
     SELECT apn.lat, apn.lon, apn.received_at, shipname
     FROM ais_positions_noumea apn
     JOIN ais_information_vessel aiv ON apn.mmsi = aiv.mmsi
-<<<<<<< Updated upstream
-<<<<<<<< Updated upstream:queries/trajet_bateau_jour.py
     WHERE apn.mmsi = 209591000
     AND apn.speed > 0.5
     AND apn.received_at::date = '2024-03-14'
-========
-    WHERE apn.received_at::date = '2024-03-14'
->>>>>>>> Stashed changes:queries/trajet_all_bateau_jour.py
-=======
-    WHERE apn.mmsi = {variable}
-    AND apn.received_at::date = '2024-03-14'
->>>>>>> Stashed changes
     ORDER BY apn.received_at
 """)
 
@@ -76,10 +63,6 @@ if rows:
     ).add_to(carte)
 
     # Afficher la carte
-<<<<<<< Updated upstream
-    carte.save('map/trajet_bateau.html')  # Sauvegarder en HTML pour l'afficher dans un navigateur
-=======
     carte.save('trajet_bateau.html')  # Sauvegarder en HTML pour l'afficher dans un navigateur
->>>>>>> Stashed changes
 else:
     print("Aucune donnée disponible pour le bateau avec MMSI 209135000 le 20 avril 2024.")

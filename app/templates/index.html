@@ -19,7 +19,7 @@
                 <div class="field">
                     <label class="label">MMSI du bateau</label>
                     <div class="control">
-                        <input class="input" type="text" id="mmsi" placeholder="Entrez le MMSI" required>
+                        <input class="input" type="text" id="mmsi" placeholder="Entrez le MMSI">
                     </div>
                 </div>
 
@@ -45,12 +45,30 @@
             </form>
         </div>
 
-        <div id="contenu"></div>
+        <div id="contenu" style="width: 800px;"></div>
     </section>
 
     <!-- Inclure SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
+        document.getElementById('date').addEventListener('input', function (event) {
+            let value = event.target.value;
+
+            // Supprimer tout ce qui n'est pas un chiffre
+            value = value.replace(/\D/g, '');
+
+            // Ajouter des séparateurs (/) en fonction de la longueur du texte
+            if (value.length > 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+            if (value.length > 5) {
+                value = value.slice(0, 5) + '/' + value.slice(5);
+            }
+
+            // Mettre à jour la valeur du champ
+            event.target.value = value;
+        });
+
         document.getElementById('searchForm').addEventListener('submit', function (event) {
             event.preventDefault(); // Empêche le formulaire de se soumettre normalement
 
@@ -60,6 +78,7 @@
             const includeStops = document.getElementById('includeStops').checked;
 
             // Vérifier que la date est au bon format (JJ/MM/AAAA)
+
             const datePattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
             if (!datePattern.test(date)) {
                 Swal.fire({
@@ -71,7 +90,24 @@
                 return;
             }
 
-
+            fetch('http://localhost:5000/get_map', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mmsi: mmsi,
+                    date: date,
+                    includeStops: includeStops
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('contenu').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
 
             // Afficher un message de succès avec les valeurs du formulaire
             Swal.fire({
@@ -87,15 +123,9 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            fetch('http://localhost:5000/get_map')
-                .then(response => response.text())
-                .then(data => {
-                    console.log(data); // Affiche le contenu dans la console pour vérification
-                    document.getElementById('contenu').innerHTML = data;
-                })
-                .catch(error => {
-                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
-                });
+
+
+
         });
 
 
