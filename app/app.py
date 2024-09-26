@@ -3,6 +3,7 @@ from flask_cors import CORS
 import psycopg2
 import folium
 import datetime
+from geopy.distance import geodesic
 
 from rdp import rdp
 
@@ -11,6 +12,7 @@ from rdp import rdp
 # Convert RGBA colors to HEX format
 list_colors = ['red', 'gray', 'green', 'darkgreen', 'darkpurple', 'lightblue', 'black', 'blue', 'lightgreen', 'darkred', 'pink', 'cadetblue', 'darkblue', 'white', 'lightgray', 'orange', 'purple', 'beige']
 
+tolerance = 1.0  # Tolérance de 1 km
 
 app = Flask(__name__)
 CORS(app)
@@ -51,6 +53,8 @@ def index():
     return render_template("index.html")
 
 
+
+
 @app.route('/get_map', methods=['GET', 'POST'])
 def get_map():
     data = request.get_json()
@@ -65,7 +69,7 @@ def get_map():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Exécuter la requête SQL pour obtenir les positions du bateau le 20 avril 2024
+    # Exécuter la requête SQL pour obtenir les positions du bateau
     cur.execute(f"""
         SELECT apn.lat, apn.lon, apn.received_at, shipname, aiv.mmsi
         FROM ais_positions_noumea apn
@@ -74,28 +78,23 @@ def get_map():
         ORDER BY apn.received_at
     """)
 
-    # Récupérer toutes les lignes de la requête
     rows = cur.fetchall()
 
     # Définir le point de départ du bateau
     direction = [-22.2711, 166.4380] if len(rows) == 0 else [rows[0][0], rows[0][1]]
 
-    # Créer une carte Folium de noumea
+    # Créer une carte Folium de Nouméa
     m = folium.Map(location=direction, zoom_start=15)
 
     # Fermer la connexion à la base de données
     cur.close()
     conn.close()
 
-
     shipname_color = {}
-        
-
-    
-
-    # Ajouter une ligne pour représenter le trajet du bateau
     trajectory = {}
     i = 0
+
+    # Parcourir les données pour chaque ligne (chaque point GPS)
     for row in rows:
         lat, lon, received_at, shipname, current_mmsi = row
 
@@ -107,41 +106,58 @@ def get_map():
 
             trajectory[shipname] = []
             shipname_color[shipname] = list_colors[i]
-            i+=1
+            i += 1
 
+        # Si le navire a déjà un point dans sa trajectoire, on vérifie la distance
+        if len(trajectory[shipname]) > 0:
+            last_point = trajectory[shipname][-1]
+            distance_km = geodesic(last_point, (lat, lon)).km
 
-        trajectory[shipname].append((lat, lon))
-        # Convertir datetime en chaîne de caractères
-        received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
-        # Ajouter un marqueur pour chaque position avec popup stylisé
-        folium.Marker(
-            location=[lat, lon],
-            popup=f"""
-                    <div style="width: 200px; white-space: nowrap;">
-                        <b>MMSI:</b> {current_mmsi}</br>
-                        <b>Nom:</b> {shipname}</br>
-                        <b>Heure:</b> {received_at_str}<br>
-                        <b>Latitude:</b> {lat}<br>
-                        <b>Longitude:</b> {lon}
-                    </div>
-                """,
-            icon=folium.Icon(color=shipname_color[shipname], icon='ship')
-        ).add_to(m)
+            # Ajouter le point seulement si la distance dépasse 1 km
+            if distance_km > 1:
+                trajectory[shipname].append((lat, lon))
+        else:
+            # Ajouter le premier point sans vérifier la distance
+            trajectory[shipname].append((lat, lon))
 
-    for shipname in trajectory.keys():
+    # Ajout des lignes et marqueurs sur la carte
+    for shipname, points in trajectory.items():
         # Ajouter une ligne pour le trajet
         folium.PolyLine(
-            locations=rdp(trajectory[shipname], epsilon=0.001),
+            locations=rdp(points, epsilon=0.001),
             color=shipname_color[shipname],
             weight=2.5,
             opacity=0.8
         ).add_to(m)
+
+        # Ajouter des marqueurs avec opacité
+        for idx, (lat, lon) in enumerate(points):
+            opacity = 1 if idx == 0 or idx == len(points) - 1 else 0
+            received_at_str = rows[idx][2].strftime('%Y-%m-%d %H:%M:%S')
+            current_mmsi = rows[idx][4]
+
+            folium.Marker(
+                location=[lat, lon],
+                popup=f"""
+                        <div style="width: 200px; white-space: nowrap;">
+                            <b>MMSI:</b> {current_mmsi}</br>
+                            <b>Nom:</b> {shipname}</br>
+                            <b>Heure:</b> {received_at_str}<br>
+                            <b>Latitude:</b> {lat}<br>
+                            <b>Longitude:</b> {lon}
+                        </div>
+                    """,
+                icon=folium.Icon(color=shipname_color[shipname], icon='ship'),
+                opacity=opacity
+            ).add_to(m)
 
     # Générer le HTML de la carte
     map_html = m._repr_html_()
 
     # Retourner le HTML
     return render_template_string(map_html)
+
+
 
 
 if __name__ == '__main__':

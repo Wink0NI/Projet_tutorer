@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 );
 """)
 
+
 conn.commit()
 
 
