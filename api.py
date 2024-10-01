@@ -80,17 +80,18 @@ async def connect_ais_stream():
                                latitude, longitude, None, None, None, None, None, None, None]
                         # Executer la requête d'insertion
                         cur.execute(insert_query, row)
+                        vitesse  = 1
                     else:
                         # calcul de la distance entre le point entrée précédemment et le nouveau point
                         vitesse = 5
 
-                        row = [mmsi, edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0]), 0, ais_message["MessageID"], ais_message["NavigationalStatus"], 0, vitesse, latitude, longitude, None, None, None]
+                    row = [mmsi, edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0]), 0, ais_message["MessageID"], ais_message["NavigationalStatus"], 0, vitesse, latitude, longitude, None, None, None]
 
-                        cur.execute(insert_query_position, row)
+                    cur.execute(insert_query_position, row)
 
                     conn.commit()
                     # Ajouter la position à la liste
-                    list_mmsi[mmsi] = [mmsi, edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0]), 0, ais_message["MessageID"], ais_message["NavigationalStatus"], 0, vitesse, latitude, longitude, None, None, None]
+                    list_mmsi[mmsi] = row
                     
 
 
