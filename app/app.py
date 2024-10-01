@@ -81,10 +81,10 @@ def get_map():
     rows = cur.fetchall()
 
     # Définir le point de départ du bateau
-    direction = [-22.2711, 166.4380] if len(rows) == 0 else [rows[0][0], rows[0][1]]
+    direction = [-22.2711, 166.4380, datetime.datetime.now()] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
 
     # Créer une carte Folium de Nouméa
-    m = folium.Map(location=direction, zoom_start=15)
+    m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
     # Fermer la connexion à la base de données
     cur.close()
@@ -110,30 +110,36 @@ def get_map():
 
         # Si le navire a déjà un point dans sa trajectoire, on vérifie la distance
         if len(trajectory[shipname]) > 0:
-            last_point = trajectory[shipname][-1]
+            last_point = [trajectory[shipname][-1][0], trajectory[shipname][-1][1]]  # Lat/Lon only
             distance_km = geodesic(last_point, (lat, lon)).km
 
             # Ajouter le point seulement si la distance dépasse 1 km
-            if distance_km > 1:
-                trajectory[shipname].append((lat, lon))
+            if distance_km > 0.001:
+                trajectory[shipname].append((lat, lon, received_at))
         else:
             # Ajouter le premier point sans vérifier la distance
-            trajectory[shipname].append((lat, lon))
+            trajectory[shipname].append((lat, lon, received_at))
 
     # Ajout des lignes et marqueurs sur la carte
     for shipname, points in trajectory.items():
+        # Collect all (lat, lon) points for the PolyLine
+        polyline_points = [(lat, lon) for lat, lon, _ in points]
+        
+        # Simplify the polyline using rdp if needed
+        simplified_points = rdp(polyline_points, epsilon=0.001)
+
         # Ajouter une ligne pour le trajet
         folium.PolyLine(
-            locations=rdp(points, epsilon=0.001),
+            locations=simplified_points,  # Use the simplified list of points
             color=shipname_color[shipname],
             weight=2.5,
             opacity=0.8
         ).add_to(m)
 
         # Ajouter des marqueurs avec opacité
-        for idx, (lat, lon) in enumerate(points):
+        for idx, (lat, lon, received_at) in enumerate(points):
             opacity = 1 if idx == 0 or idx == len(points) - 1 else 0
-            received_at_str = rows[idx][2].strftime('%Y-%m-%d %H:%M:%S')
+            received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
             current_mmsi = rows[idx][4]
 
             folium.Marker(
