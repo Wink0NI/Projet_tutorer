@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 import psycopg2
 import functions.edit_str as edit_str
-
+import math
 
 DATABASE_CONFIG = {
     'host': 'localhost',
@@ -44,6 +44,56 @@ insert_query_position = """
         ) 
         """
 
+select_mmsi = """
+        SELECT lat, lon, received_at FROM ais_positions_noumea WHERE mmsi = %s ORDER BY received_at DESC LIMIT 1
+        """
+
+
+def haversine_formula(lat1, lat2, lon1, lon2):
+    # Earth radius in kilometers
+    earth_radius = 6371.0
+    
+    # Convert degrees to radians
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    lat2 = math.radians(lat2)
+    lon2 = math.radians(lon2)
+    
+    # Difference in coordinates
+    diff_lat = lat2 - lat1
+    diff_lon = lon2 - lon1
+
+    # Haversine formula
+    formula = math.sin(diff_lat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(diff_lon / 2)**2
+    celerity = 2 * math.atan2(math.sqrt(formula), math.sqrt(1 - formula))
+
+    distance = earth_radius * celerity
+
+    return distance
+
+def calculate_speed(lat1, lon1, time1, lat2, lon2, time2):
+    # Calculate the distance between two points (in kilometers)
+    distance = haversine_formula(lat1, lat2, lon1, lon2)
+    
+    # Convert time strings to datetime objects
+    time1 = datetime.strptime(time1, "%Y-%m-%d %H:%M:%S")
+    time2 = datetime.strptime(time2, "%Y-%m-%d %H:%M:%S")
+    
+    # Get the time difference in seconds
+    time_diff = (time2 - time1).total_seconds()
+    
+    # Convert time difference from seconds to hours
+    time_diff_hours = time_diff / 3600.0
+    
+    # Calculate speed in kilometers per hour
+    if time_diff_hours > 0:
+        speed = distance / time_diff_hours
+    else:
+        speed = 0
+    
+    return speed
+
+
 async def connect_ais_stream():
     async with websockets.connect("wss://stream.aisstream.io/v0/stream") as websocket:
         # Définir les coordonnées pour la zone de Sydney
@@ -74,18 +124,27 @@ async def connect_ais_stream():
                           f"Latitude: {latitude} Longitude: {longitude}")
                     
                     if mmsi not in list_mmsi.keys():
+                        date = edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
                         
-                        row = [mmsi, 0, 0, edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0]), 0, ais_message["MessageID"], None, None, message["MetaData"]["ShipName"], None,
+                        row = [mmsi, 0, 0, date, 0, ais_message["MessageID"], None, None, message["MetaData"]["ShipName"], None,
                                None, None, None, None, None, None, None, None, 0, 0,
                                latitude, longitude, None, None, None, None, None, None, None]
                         # Executer la requête d'insertion
                         cur.execute(insert_query, row)
                         vitesse  = 1
                     else:
-                        # calcul de la distance entre le point entrée précédemment et le nouveau point
-                        vitesse = 5
 
-                    row = [mmsi, edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0]), 0, ais_message["MessageID"], ais_message["NavigationalStatus"], 0, vitesse, latitude, longitude, None, None, None]
+                        # Get the previous position and time
+                        prev_lat = list_mmsi[mmsi][7]
+                        prev_lon = list_mmsi[mmsi][8]
+                        prev_time = list_mmsi[mmsi][1]
+
+                        # Calculate speed
+                        vitesse = calculate_speed(prev_lat, prev_lon, prev_time, latitude, longitude, date)
+                        print(vitesse)
+
+
+                    row = [mmsi, date, 0, ais_message["MessageID"], ais_message["NavigationalStatus"], 0, vitesse, latitude, longitude, None, None, None]
 
                     cur.execute(insert_query_position, row)
 
