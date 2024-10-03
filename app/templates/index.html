@@ -26,7 +26,7 @@
                 <div class="field">
                     <label class="label">Date</label>
                     <div class="control">
-                        <input class="input" type="text" id="date" placeholder="JJ/MM/AAAA" required>
+                        <input class="input" type="text" id="date" placeholder="JJ/MM/AAAA">
                     </div>
                 </div>
 
@@ -74,7 +74,20 @@
 
             // Récupérer les valeurs des champs du formulaire
             const mmsi = document.getElementById('mmsi').value;
-            const date = document.getElementById('date').value;
+            let date = document.getElementById('date').value;
+            
+            if (date.length === 0) {
+                date_format = new Date();
+                let jour = date_format.getDate();
+                let month = date_format.getMonth() + 1;
+                if (jour < 10) {
+                    jour = "0" + jour;
+                }
+                if (month < 10) {
+                    month = "0" + month;
+                }
+                date = jour + "/" + month + "/" + date_format.getFullYear()
+            }
             const includeStops = document.getElementById('includeStops').checked;
 
             // Vérifier que la date est au bon format (JJ/MM/AAAA)
@@ -132,7 +145,7 @@
             if (month < 10) {
                 month = "0" + month;
             }
-            
+
 
 
             fetch('http://localhost:5000/get_map', {
@@ -142,7 +155,7 @@
                 },
                 body: JSON.stringify({
                     mmsi: "",
-                    date: date+"/"+month+"/"+currentdate.getFullYear(),
+                    date: date + "/" + month + "/" + currentdate.getFullYear(),
                     includeStops: false
                 })
             })
