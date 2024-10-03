@@ -123,6 +123,36 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
+            const currentdate = new Date(Date.now());
+            let date = currentdate.getDate();
+            let month = currentdate.getMonth() + 1;
+            if (date < 10) {
+                date = "0" + date;
+            }
+            if (month < 10) {
+                month = "0" + month;
+            }
+            
+
+
+            fetch('http://localhost:5000/get_map', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mmsi: "",
+                    date: date+"/"+month+"/"+currentdate.getFullYear(),
+                    includeStops: false
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('contenu').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
 
 
 

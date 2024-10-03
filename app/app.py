@@ -2,6 +2,7 @@ from flask import Flask, render_template, send_from_directory, request, redirect
 from flask_cors import CORS
 import psycopg2
 import folium
+
 import datetime
 from geopy.distance import geodesic
 
@@ -98,32 +99,32 @@ def get_map():
     for row in rows:
         lat, lon, received_at, shipname, current_mmsi = row
 
-        if shipname not in shipname_color:
+        if current_mmsi not in shipname_color:
             try:
-                shipname_color[shipname] = list_colors[i]
+                shipname_color[current_mmsi] = list_colors[i]
             except:
                 i = 0
 
-            trajectory[shipname] = []
-            shipname_color[shipname] = list_colors[i]
+            trajectory[current_mmsi] = []
+            shipname_color[current_mmsi] = list_colors[i]
             i += 1
 
         # Si le navire a déjà un point dans sa trajectoire, on vérifie la distance
-        if len(trajectory[shipname]) > 0:
-            last_point = [trajectory[shipname][-1][0], trajectory[shipname][-1][1]]  # Lat/Lon only
+        if len(trajectory[current_mmsi]) > 0:
+            last_point = [trajectory[current_mmsi][-1][0], trajectory[current_mmsi][-1][1]]  # Lat/Lon only
             distance_km = geodesic(last_point, (lat, lon)).km
 
             # Ajouter le point seulement si la distance dépasse 1 km
             if distance_km > 0.001:
-                trajectory[shipname].append((lat, lon, received_at))
+                trajectory[current_mmsi].append((lat, lon, received_at, shipname))
         else:
             # Ajouter le premier point sans vérifier la distance
-            trajectory[shipname].append((lat, lon, received_at))
+            trajectory[current_mmsi].append((lat, lon, received_at, shipname))
 
     # Ajout des lignes et marqueurs sur la carte
-    for shipname, points in trajectory.items():
+    for mmsi, points in trajectory.items():
         # Collect all (lat, lon) points for the PolyLine
-        polyline_points = [(lat, lon) for lat, lon, _ in points]
+        polyline_points = [(lat, lon) for lat, lon, _, _ in points]
         
         # Simplify the polyline using rdp if needed
         simplified_points = rdp(polyline_points, epsilon=0.001)
@@ -131,29 +132,30 @@ def get_map():
         # Ajouter une ligne pour le trajet
         folium.PolyLine(
             locations=simplified_points,  # Use the simplified list of points
-            color=shipname_color[shipname],
+            color=shipname_color[mmsi],
             weight=2.5,
             opacity=0.8
         ).add_to(m)
 
         # Ajouter des marqueurs avec opacité
-        for idx, (lat, lon, received_at) in enumerate(points):
+        for idx, (lat, lon, received_at, shipname
+                  ) in enumerate(points):
             opacity = 1 if idx == 0 or idx == len(points) - 1 else 0
             received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
-            current_mmsi = rows[idx][4]
+  
 
             folium.Marker(
                 location=[lat, lon],
                 popup=f"""
                         <div style="width: 200px; white-space: nowrap;">
-                            <b>MMSI:</b> {current_mmsi}</br>
+                            <b>MMSI:</b> {mmsi}</br>
                             <b>Nom:</b> {shipname}</br>
                             <b>Heure:</b> {received_at_str}<br>
                             <b>Latitude:</b> {lat}<br>
                             <b>Longitude:</b> {lon}
                         </div>
                     """,
-                icon=folium.Icon(color=shipname_color[shipname], icon='ship'),
+                icon=folium.Icon(color=shipname_color[mmsi], icon='ship'),
                 opacity=opacity
             ).add_to(m)
 

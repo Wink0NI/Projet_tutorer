@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
     alt FLOAT,
     count INT,
     msg_types INT,
-    channels INT
+    channels INT,
+    PRIMARY KEY (mmsi)
 );
 """)
 
