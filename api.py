@@ -1,10 +1,13 @@
-import asyncio
+import ssl
 import websockets
+import asyncio
 import json
 from datetime import datetime, timezone
 import psycopg2
 import functions.edit_str as edit_str
 import math
+
+ssl_context = ssl._create_unverified_context()
 
 DATABASE_CONFIG = {
     'host': 'localhost',
@@ -95,7 +98,7 @@ def calculate_speed(lat1, lon1, time1, lat2, lon2, time2):
 
 
 async def connect_ais_stream():
-    async with websockets.connect("wss://stream.aisstream.io/v0/stream") as websocket:
+    async with websockets.connect("wss://stream.aisstream.io/v0/stream",ssl=ssl_context) as websocket:
         # Définir les coordonnées pour la zone de Sydney
         subscribe_message = {
             "APIKey": "96f5646e72d992013ac5c379e357cb553d0339c8",
