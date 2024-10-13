@@ -46,6 +46,7 @@
         </div>
 
         <div id="contenu" style="width: 800px;"></div>
+        <div id="heatmap" style="width: 800px;"></div>
     </section>
 
     <!-- Inclure SweetAlert2 JS -->
@@ -75,7 +76,7 @@
             // Récupérer les valeurs des champs du formulaire
             const mmsi = document.getElementById('mmsi').value;
             let date = document.getElementById('date').value;
-            
+
             if (date.length === 0) {
                 date_format = new Date();
                 let jour = date_format.getDate();
@@ -122,6 +123,25 @@
                     console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
                 });
 
+            fetch('http://localhost:5000/get_heatmap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mmsi: mmsi,
+                    date: date,
+                    includeStops: includeStops
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('heatmap').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+
             // Afficher un message de succès avec les valeurs du formulaire
             Swal.fire({
                 title: 'Recherche effectuée',
@@ -162,6 +182,25 @@
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById('contenu').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+
+            fetch('http://localhost:5000/get_heatmap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mmsi: "",
+                    date: date + "/" + month + "/" + currentdate.getFullYear(),
+                    includeStops: false
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('heatmap').innerHTML = data;
                 })
                 .catch(error => {
                     console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console

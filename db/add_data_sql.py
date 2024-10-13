@@ -21,9 +21,7 @@ cur = conn.cursor()
 
 # Suppression des tables si existante
 cur.execute("DROP TABLE IF EXISTS ais_information_vessel")
-cur.execute("DROP TABLE IF EXISTS ais_positions_noumea")
-cur.execute("DROP TABLE IF EXISTS ais_vessel_aus_nz")
-cur.execute("DROP TABLE IF EXISTS ais_position_aus_nz")
+cur.execute("DROP TABLE IF EXISTS ais_positions")
 
 ##################################################################################################################################################################
 
@@ -64,9 +62,9 @@ CREATE TABLE IF NOT EXISTS ais_information_vessel (
 """)
 ##################################################################################################################################################################
 
-# Création de la table "ais_positions_noumea"
+# Création de la table "ais_positions"
 cur.execute("""
-CREATE TABLE IF NOT EXISTS ais_positions_noumea (
+CREATE TABLE IF NOT EXISTS ais_positions (
     mmsi INT NOT NULL,
     received_at TIMESTAMP NOT NULL,
     station_id INT,
@@ -82,63 +80,8 @@ CREATE TABLE IF NOT EXISTS ais_positions_noumea (
 );
 """)
 
-##################################################################################################################################################################
 
-# Création de la table "ais_vessel_aus_nz"
-cur.execute("""
-CREATE TABLE IF NOT EXISTS ais_vessel_aus_nz (
-    mmsi BIGINT,
-    signalpower FLOAT,
-    ppm FLOAT,
-    received_at TIMESTAMP,
-    station_id BIGINT,
-    msg_id INT,
-    imo BIGINT,
-    callsign VARCHAR(255),
-    shipname VARCHAR(255),
-    shiptype INT,
-    to_port INT,
-    to_bow INT,
-    to_stern INT,
-    to_starboard INT,
-    eta TIMESTAMP,
-    draught FLOAT,
-    destination VARCHAR(255),
-    status INT,
-    turn FLOAT,
-    speed FLOAT,
-    lat FLOAT,
-    lon FLOAT,
-    course FLOAT,
-    heading FLOAT,
-    aid_type INT,
-    alt FLOAT,
-    count INT,
-    msg_types INT,
-    channels INT,
-    PRIMARY KEY (mmsi)
-);
-""")
 
-##################################################################################################################################################################
-
-# Création de la table "ais_positions_aus_nz"
-cur.execute("""
-CREATE TABLE IF NOT EXISTS ais_position_aus_nz (
-    mmsi INT NOT NULL,
-    received_at TIMESTAMP NOT NULL,
-    station_id INT,
-    msg_id INT,
-    status VARCHAR(50),
-    turn FLOAT,
-    speed FLOAT,
-    lat FLOAT,
-    lon FLOAT,
-    course FLOAT,
-    heading FLOAT,
-    geom VARCHAR(255)
-);
-""")
 
 # Commit les créations des tables
 conn.commit()
@@ -212,7 +155,7 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
     
         # Ajout des données csv transformé à la table sql
         insert_query = """
-            INSERT INTO ais_positions_noumea (
+            INSERT INTO ais_positions (
                 mmsi, received_at, station_id, msg_id, status, turn, speed, lat, lon, course, heading, geom
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
@@ -222,7 +165,7 @@ with open('db/ais_positions_noumea_ptutore.csv', 'r') as f:
         cur.execute(insert_query, row)
         lines += 1
 
-print(f"SQL: Insertion de {lines} donnée dans la table ais_positions_noumea terminée...")
+print(f"SQL: Insertion de {lines} donnée dans la table ais_positions terminée...")
 
 # Valider et fermer
 conn.commit()
@@ -253,7 +196,7 @@ with open('db/ais_vessel_aus_nz.csv', 'r') as f:
         
         # Ajout des données csv transformé à la table sql
         insert_query = """
-            INSERT INTO ais_vessel_aus_nz (
+            INSERT INTO ais_information_vessel (
                 mmsi, signalpower, ppm, received_at, station_id, msg_id, imo, callsign, shipname, shiptype, 
                 to_port, to_bow, to_stern, to_starboard, eta, draught, destination, status, turn, speed, 
                 lat, lon, course, heading, aid_type, alt, count, msg_types, channels
@@ -295,7 +238,7 @@ with open('db/ais_position_aus_nz.csv', 'r') as f:
         
         # Ajout des données csv transformé à la table sql
         insert_query = """
-            INSERT INTO ais_position_aus_nz (
+            INSERT INTO ais_positions (
                 mmsi, received_at, station_id, msg_id, status, turn, speed, lat, lon, course, heading, geom
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s

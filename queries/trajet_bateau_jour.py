@@ -12,13 +12,13 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 # Exécuter la requête SQL pour obtenir les positions du bateau le 20 avril 2024
 cur.execute(f"""
-    SELECT apn.lat, apn.lon, apn.received_at, shipname
-    FROM ais_positions_noumea apn
-    JOIN ais_information_vessel aiv ON apn.mmsi = aiv.mmsi
-    WHERE apn.mmsi = 209591000
-    AND apn.speed > 0.5
-    AND apn.received_at::date = '2024-03-14'
-    ORDER BY apn.received_at
+    SELECT ap.lat, ap.lon, ap.received_at, shipname
+    FROM ais_positions ap
+    JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
+    WHERE ap.mmsi = 209591000
+    AND ap.speed > 0.5
+    AND ap.received_at::date = '2024-03-14'
+    ORDER BY ap.received_at
 """)
 
 # Récupérer toutes les lignes de la requête

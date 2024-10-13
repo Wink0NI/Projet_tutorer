@@ -40,7 +40,7 @@ INSERT INTO ais_information_vessel (
 """
 
 insert_query_position = """
-        INSERT INTO ais_positions_noumea (
+        INSERT INTO ais_positions (
             mmsi, received_at, station_id, msg_id, status, turn, speed, lat, lon, course, heading, geom
         ) VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
@@ -48,7 +48,7 @@ insert_query_position = """
         """
 
 select_mmsi = """
-        SELECT lat, lon, received_at FROM ais_positions_noumea WHERE mmsi = %s ORDER BY received_at DESC LIMIT 1
+        SELECT lat, lon, received_at FROM ais_positions WHERE mmsi = %s ORDER BY received_at DESC LIMIT 1
         """
 
 

@@ -6,6 +6,7 @@ import folium
 import datetime
 
 from geopy.distance import geodesic
+from folium.plugins import HeatMap
 
 from rdp import rdp
 
@@ -122,21 +123,28 @@ def get_map():
         return jsonify({'error': 'MMSI'}), 400
 
     mmsi = data['mmsi']
-    date = convertir_date(data['date']) if 'date' in data else datetime.datetime.now(
-    ).strftime('%Y-%m-%d %H:%M:%S')
-    include_stops = data['includeStops']
+    includeStops = data['includeStops']
 
-    stamp = f" apn.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp" if 'date' not in data else f"'{date}'::timestamp <= apn.received_at AND apn.received_at <'{date}'::timestamp + INTERVAL '24 hours'"
+    date = data.get('date', None)  # Expecting date in a specific format
+
+    # Create the timestamp condition based on the presence of the date parameter
+    if date is None:
+        # Get current timestamp for 24 hours interval
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
+    else:
+        date = convertir_date(date)
+        stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
 
     rows = execute_query(f"""
-    SELECT DISTINCT ON (apn.mmsi) apn.lat, apn.lon, apn.received_at, aiv.shipname, apn.mmsi
-    FROM ais_positions_noumea apn
-    JOIN ais_information_vessel aiv ON apn.mmsi = aiv.mmsi
+    SELECT DISTINCT ON (ap.mmsi) ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
+    FROM ais_positions ap
+    JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
     WHERE aiv.shipname NOT LIKE 'TEST'
     AND  {stamp}
-    {f" AND apn.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
-    {" AND apn.speed > 0.5" if not include_stops else ""}
-    ORDER BY apn.mmsi, apn.received_at DESC
+    {f" AND ap.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
+    {f" AND ap.speed > 0.5" if includeStops else ""}
+    ORDER BY ap.mmsi, ap.received_at DESC
 """)
 
     # Définir le point de départ du bateau
@@ -197,13 +205,13 @@ def get_map_mmsi():
     date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     rows = execute_query(f"""
-    SELECT apn.lat, apn.lon, apn.received_at, aiv.shipname, apn.mmsi
-    FROM ais_positions_noumea apn
-    JOIN ais_information_vessel aiv ON apn.mmsi = aiv.mmsi
+    SELECT ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
+    FROM ais_positions ap
+    JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
     WHERE aiv.shipname NOT LIKE 'TEST'
-    AND apn.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
-    AND apn.mmsi = {mmsi}
-    ORDER BY apn.received_at DESC
+    AND ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
+    AND ap.mmsi = {mmsi}
+    ORDER BY ap.received_at DESC
 """)
 
     # Définir le point de départ du bateau
@@ -272,6 +280,63 @@ def get_map_mmsi():
 
     # Retourner le HTML
     return render_template_string(map_html)
+
+
+@app.route('/get_heatmap', methods=['GET', 'POST'])
+def get_heatmap():
+    data = request.get_json()
+
+    mmsi = data['mmsi']
+    includeStops = data['includeStops']
+
+    date = data.get('date', None)  # Expecting date in a specific format
+
+    # Create the timestamp condition based on the presence of the date parameter
+    if date is None:
+        # Get current timestamp for 24 hours interval
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
+    else:
+        date = convertir_date(date)
+        stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
+
+
+    # SQL query to fetch latitude and longitude from ais_positions
+    query = f"""
+    SELECT ap.lat, ap.lon
+    FROM ais_positions ap
+    JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
+    WHERE aiv.shipname NOT LIKE 'TEST'
+    AND {stamp}
+    {f" AND ap.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
+    {f" AND ap.speed > 0.5" if includeStops else ""}
+    """
+    
+    # Fetching the data from the database
+    rows = execute_query(query)
+
+    # Définir le point de départ du bateau
+    direction = [-22.2711, 166.4380
+                 ] if len(rows) == 0 else [rows[0][0], rows[0][1]]
+
+    # Créer une carte Folium de Nouméa
+    m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
+
+
+    # Prepare the data for the heatmap
+    heat_data = [[lat, lon] for lat, lon in rows]
+
+    # Create the heatmap layer
+    HeatMap(heat_data).add_to(m)
+
+    # Generate the HTML representation of the map
+    map_html = m._repr_html_()
+
+    # Return the map as a rendered HTML string
+    return render_template_string(map_html)
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 
 if __name__ == '__main__':
