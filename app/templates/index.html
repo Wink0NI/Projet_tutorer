@@ -9,6 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
     <!-- Inclure SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <!-- Include Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Include Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <style>
         body {
             background-color: #f4f4f4;
@@ -44,12 +53,20 @@
             margin-bottom: 20px;
         }
 
-        #contenu, #heatmap {
+        #contenu,
+        #heatmap {
             margin-top: 30px;
             padding: 15px;
             background-color: #e8f5e9;
             border: 1px solid #ccc;
             border-radius: 5px;
+            width: 800px;
+        }
+
+        /* Optional: Customize the position or size of the calendar icon */
+        .has-icons-right .icon {
+            pointer-events: none;
+            /* Prevents the icon from being clickable */
         }
     </style>
 </head>
@@ -68,10 +85,14 @@
 
                 <div class="field">
                     <label class="label">Date</label>
-                    <div class="control">
+                    <div class="control has-icons-right">
                         <input class="input" type="text" id="date" placeholder="JJ/MM/AAAA">
+                        <span class="icon is-small is-right">
+                            <i class="fas fa-calendar-alt"></i>
+                        </span>
                     </div>
                 </div>
+
 
                 <div class="field">
                     <div class="control">
@@ -241,7 +262,16 @@
                 .catch(error => {
                     console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
                 });
+
+            flatpickr("#date", {
+                dateFormat: "d/m/Y", // Format: JJ/MM/AAAA
+                allowInput: false,   // Prevent manual input
+                maxDate: "today"     // Optional: Prevent future dates
+            });
+
         });
+
+
     </script>
 </body>
 
