@@ -9,6 +9,49 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
     <!-- Inclure SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            color: #3273dc;
+        }
+
+        .button.is-primary {
+            background-color: #3273dc;
+            border-color: transparent;
+            transition: background-color 0.3s;
+        }
+
+        .button.is-primary:hover {
+            background-color: #276c99;
+        }
+
+        .checkbox label {
+            font-weight: 500;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        #contenu, #heatmap {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 
 <body>
@@ -45,8 +88,8 @@
             </form>
         </div>
 
-        <div id="contenu" style="width: 800px;"></div>
-        <div id="heatmap" style="width: 800px;"></div>
+        <div id="contenu"></div>
+        <div id="heatmap"></div>
     </section>
 
     <!-- Inclure SweetAlert2 JS -->
@@ -92,7 +135,6 @@
             const includeStops = document.getElementById('includeStops').checked;
 
             // Vérifier que la date est au bon format (JJ/MM/AAAA)
-
             const datePattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
             if (!datePattern.test(date)) {
                 Swal.fire({
@@ -149,10 +191,6 @@
                 icon: 'success',
                 confirmButtonText: 'OK'
             });
-
-
-
-
         });
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -165,8 +203,6 @@
             if (month < 10) {
                 month = "0" + month;
             }
-
-
 
             fetch('http://localhost:5000/get_map', {
                 method: 'POST',
@@ -205,13 +241,7 @@
                 .catch(error => {
                     console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
                 });
-
-
-
         });
-
-
-
     </script>
 </body>
 
