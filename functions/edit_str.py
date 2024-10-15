@@ -1,6 +1,7 @@
 from datetime import datetime
 from requests_html import AsyncHTMLSession
 from bs4 import BeautifulSoup
+import requests
 
 ship_types = {
     0: "Not available (default)",
@@ -71,21 +72,32 @@ async def get_ship_type(mmsi, session=None):
         session = AsyncHTMLSession()
 
     url = f"https://www.vesselfinder.com/vessels/details/{mmsi}"
-    
-    # Make an asynchronous request
-    response = await session.get(url)
 
-    # Parse the HTML with BeautifulSoup
-    soup = BeautifulSoup(response.html.html, 'html.parser')
+    try:
+        # Set a timeout for the request
+        response = await session.get(url, timeout=10)
+        
+        # Parse the HTML with BeautifulSoup
+        soup = BeautifulSoup(response.html.html, 'html.parser')
 
-    # Search for the ship type in the details
-    details = soup.find_all('tr')
-    for detail in details:
-        cells = detail.find_all('td')
-        if cells and cells[0].text.strip() == "Ship Type":
-            print(cells[1].text.strip())
-            return cells[1].text.strip()  # Return the ship type found
-    return None  # Return None if no ship type is found
+        # Search for the ship type in the details
+        details = soup.find_all('tr')
+        for detail in details:
+            cells = detail.find_all('td')
+            if cells and cells[0].text.strip() == "Ship Type":
+                return cells[1].text.strip()  # Return the ship type found
+        return None  # Return None if no ship type is found
+
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection error: {e}")
+        return None  # Handle connection error
+    except requests.exceptions.Timeout:
+        print(f"Request timed out for MMSI: {mmsi}")
+        return None  # Handle timeout error
+    finally:
+        # Optionally, close the session after the request (if you create a new one)
+        if session is None:
+            await session.close()
 
 #Fonction pour associer le type de navire à son numéro
 def assign_ship_type_number(ship_type):
