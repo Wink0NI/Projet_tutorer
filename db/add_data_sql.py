@@ -22,6 +22,7 @@ cur = conn.cursor()
 # Suppression des tables si existante
 cur.execute("DROP TABLE IF EXISTS ais_information_vessel")
 cur.execute("DROP TABLE IF EXISTS ais_positions")
+cur.execute("DROP TABLE IF EXISTS shiptype")
 
 ##################################################################################################################################################################
 
@@ -81,7 +82,13 @@ CREATE TABLE IF NOT EXISTS ais_positions (
 """)
 
 
-
+#table shiptype
+cur.execute("""
+CREATE TABLE IF NOT EXISTS shiptype (
+    id_shiptype INT NOT NULL PRIMARY KEY,
+    shiptype VARCHAR(255) NOT NULL
+);
+""")
 
 # Commit les créations des tables
 conn.commit()
@@ -177,7 +184,7 @@ lines = 0
 with open('db/ais_vessel_aus_nz.csv', 'r') as f:
     reader = csv.reader(f, delimiter=",")
 
-    print("SQL: Insertion de données de ais_vessel_aus_nz en cours...")
+    print("SQL: Insertion de données de ais_vessel en cours...")
 
     # Sauter la ligne d'en-tête
     header = next(reader)
@@ -210,7 +217,7 @@ with open('db/ais_vessel_aus_nz.csv', 'r') as f:
         cur.execute(insert_query, row)
         lines += 1
 
-print(f"SQL: Insertion de {lines} données de ais_vessel_aus_nz terminée...")
+print(f"SQL: Insertion de {lines} données de ais_vessel terminée...")
 
 # Valider et fermer
 conn.commit()
@@ -247,7 +254,34 @@ with open('db/ais_position_aus_nz.csv', 'r') as f:
 
         cur.execute(insert_query, row)
         lines += 1
-print(f"SQL: Insertion de {lines} donnée dans la table ais_position_aus_nz terminée...")
+print(f"SQL: Insertion de {lines} donnée dans la table ais_position terminée...")
+
+
+lines = 0
+
+with open('db/shiptype.csv', 'r') as f:
+    reader = csv.reader(f, delimiter=";")
+
+    print(f"SQL: Injection de  donnée shiptype dans la table ais_position en cours...")
+
+    
+
+    for line in reader:
+        line = [str_to_none(cell) for cell in line]  # Utilisation de la méthode str_to_none
+        line = [str_to_nbr(cell) for cell in line]
+        cur.execute("UPDATE ais_information_vessel SET shiptype = %s WHERE mmsi = %s", [assign_ship_type_number(line[1]),  line[0]])
+        lines += 1
+
+print(f"SQL: Injection de {lines} donnée shiptype dans la table ais_position terminée...")
+
+
+lines = 0
+print(f"SQL: Insertion de  donnée dans la table shiptype...")
+for id,shiptype in ship_types.items():
+    cur.execute("INSERT INTO shiptype VALUES (%s, %s)", [id, shiptype])
+    lines += 1
+
+print(f"SQL: Insertion de {lines} donnée dans la table shiptype terminée...")
 
 # Valider et fermer
 conn.commit()

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import psycopg2
 import functions.edit_str as edit_str
 import math
+from requests_html import AsyncHTMLSession
 
 ssl_context = ssl._create_unverified_context()
 
@@ -98,6 +99,7 @@ def calculate_speed(lat1, lon1, time1, lat2, lon2, time2):
 
 
 async def connect_ais_stream():
+    session = AsyncHTMLSession()
     async with websockets.connect("wss://stream.aisstream.io/v0/stream",ssl=ssl_context) as websocket:
         # Définir les coordonnées pour la zone de Sydney
         subscribe_message = {
@@ -127,13 +129,19 @@ async def connect_ais_stream():
                           f"Latitude: {latitude} Longitude: {longitude}")
                     
                     if mmsi not in list_mmsi.keys():
-                        date = edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
-                        
-                        row = [mmsi, 0, 0, date, 0, ais_message["MessageID"], None, None, message["MetaData"]["ShipName"], None,
-                               None, None, None, None, None, None, None, None, 0, 0,
-                               latitude, longitude, None, None, None, None, None, None, None]
-                        # Executer la requête d'insertion
-                        cur.execute(insert_query, row)
+                        cur.execute("SELECT * FROM ais_information_vessel WHERE mmsi = %s", [mmsi])
+                        cur.fetchone()
+                        if cur.rowcount > 0:
+                            date = edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
+
+                            shiptype = await edit_str.get_ship_type(mmsi, session=session) 
+                            shiptype = edit_str.assign_ship_type_number(shiptype)
+                            
+                            row = [mmsi, 0, 0, date, 0, ais_message["MessageID"], None, None, message["MetaData"]["ShipName"], shiptype,
+                                None, None, None, None, None, None, None, None, 0, 0,
+                                latitude, longitude, None, None, None, None, None, None, None]
+                            # Executer la requête d'insertion
+                            cur.execute(insert_query, row)
                         vitesse  = 1
                     else:
 
