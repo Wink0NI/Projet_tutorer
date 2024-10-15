@@ -140,7 +140,7 @@ def get_map():
     SELECT DISTINCT ON (ap.mmsi) ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
-    WHERE aiv.shipname NOT LIKE 'TEST'
+    WHERE aiv.shipname NOT LIKE '%TEST%'
     AND  {stamp}
     {f" AND ap.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
     {f" AND ap.speed > 0.5" if includeStops else ""}
@@ -208,7 +208,7 @@ def get_map_mmsi():
     SELECT ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
-    WHERE aiv.shipname NOT LIKE 'TEST'
+    WHERE aiv.shipname NOT LIKE '%TEST%'
     AND ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
     AND ap.mmsi = {mmsi}
     ORDER BY ap.received_at DESC
@@ -306,7 +306,7 @@ def get_heatmap():
     SELECT ap.lat, ap.lon
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
-    WHERE aiv.shipname NOT LIKE 'TEST'
+    WHERE aiv.shipname NOT LIKE '%TEST%'
     AND {stamp}
     {f" AND ap.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
     {f" AND ap.speed > 0.5" if includeStops else ""}
