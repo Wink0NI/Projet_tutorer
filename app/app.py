@@ -122,7 +122,7 @@ def get_map():
     if 'includeStops' not in data:
         return jsonify({'error': 'MMSI'}), 400
 
-    mmsi = data['mmsi']
+    shiptype = data['shiptype']
     includeStops = data['includeStops']
 
     date = data.get('date', None)  # Expecting date in a specific format
@@ -140,9 +140,10 @@ def get_map():
     SELECT DISTINCT ON (ap.mmsi) ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
+    {f" JOIN shiptype s aiv ON aiv.shiptype = s.id_shiptype" if len(shiptype) > 0 else ""}
     WHERE aiv.shipname NOT LIKE '%TEST%'
     AND  {stamp}
-    {f" AND ap.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
+    {f" AND s.shiptype = {shiptype}" if len(shiptype) > 0 else ""} 
     {f" AND ap.speed > 0.5" if includeStops else ""}
     ORDER BY ap.mmsi, ap.received_at DESC
 """)
@@ -286,7 +287,7 @@ def get_map_mmsi():
 def get_heatmap():
     data = request.get_json()
 
-    mmsi = data['mmsi']
+    shiptype = data['shiptype']
     includeStops = data['includeStops']
 
     date = data.get('date', None)  # Expecting date in a specific format
@@ -306,9 +307,10 @@ def get_heatmap():
     SELECT ap.lat, ap.lon
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
+    {f" JOIN shiptype s aiv ON aiv.shiptype = s.id_shiptype" if len(shiptype) > 0 else ""}
     WHERE aiv.shipname NOT LIKE '%TEST%'
     AND {stamp}
-    {f" AND ap.mmsi = {mmsi}" if len(mmsi) > 0 else ""} 
+    {f" AND s.shiptype = {shiptype}" if len(shiptype) > 0 else ""} 
     {f" AND ap.speed > 0.5" if includeStops else ""}
     """
     

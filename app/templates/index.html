@@ -77,9 +77,9 @@
             <h1 class="title">Recherche de Bateau</h1>
             <form id="searchForm">
                 <div class="field">
-                    <label class="label">MMSI du bateau</label>
+                    <label class="label">Shiptype du bateau</label>
                     <div class="control">
-                        <input class="input" type="text" id="mmsi" placeholder="Entrez le MMSI">
+                        <input class="input" type="text" id="shiptype" placeholder="Entrez le shiptype">
                     </div>
                 </div>
 
@@ -138,7 +138,7 @@
             event.preventDefault(); // Empêche le formulaire de se soumettre normalement
 
             // Récupérer les valeurs des champs du formulaire
-            const mmsi = document.getElementById('mmsi').value;
+            const shiptype = document.getElementById('shiptype').value;
             let date = document.getElementById('date').value;
 
             if (date.length === 0) {
@@ -173,7 +173,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    mmsi: mmsi,
+                    shiptype: shiptype,
                     date: date,
                     includeStops: includeStops
                 })
@@ -192,7 +192,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    mmsi: mmsi,
+                    shiptype: shiptype,
                     date: date,
                     includeStops: includeStops
                 })
@@ -231,7 +231,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    mmsi: "",
+                    shiptype: "",
                     date: date + "/" + month + "/" + currentdate.getFullYear(),
                     includeStops: false
                 })
@@ -250,7 +250,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    mmsi: "",
+                    shiptype: "",
                     date: date + "/" + month + "/" + currentdate.getFullYear(),
                     includeStops: false
                 })
