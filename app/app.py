@@ -8,7 +8,6 @@ import datetime
 from geopy.distance import geodesic
 from folium.plugins import HeatMap
 
-from rdp import rdp
 
 
 # Convert RGBA colors to HEX format
@@ -212,49 +211,49 @@ def get_map_mmsi():
     WHERE aiv.shipname NOT LIKE '%TEST%'
     AND ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
     AND ap.mmsi = {mmsi}
-    ORDER BY ap.received_at DESC
-""")
+    ORDER BY ap.received_at
+    """)
 
-    # Définir le point de départ du bateau
+    # Define the starting point of the ship
     direction = [-22.2711, 166.4380, datetime.datetime.now()
-                 ] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
+                 ] if len(rows) == 0 else [float(rows[0][0]), float(rows[0][1]), rows[0][2]]
 
-    # Créer une carte Folium de Nouméa
+    # Create a Folium map
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
     trajectory = []
-    i = 0
 
-    # Parcourir les données pour chaque ligne (chaque point GPS)
+    # Traverse the data for each row (GPS point)
     for row in rows:
         lat, lon, received_at, shipname, current_mmsi = row
 
-        # Si le navire a déjà un point dans sa trajectoire, on vérifie la distance
-        if len(trajectory[current_mmsi]) > 0:
-            last_point = [trajectory[current_mmsi][-1][0],
-                          trajectory[current_mmsi][-1][1]]  # Lat/Lon only
+        # Convert lat/lon to floats
+        lat = float(lat)
+        lon = float(lon)
+
+        # If the ship already has a point in its trajectory, check the distance
+        if len(trajectory) > 0:
+            last_point = [trajectory[-1][0], trajectory[-1][1]]  # Lat/Lon only
             distance_km = geodesic(last_point, (lat, lon)).km
 
-            # Ajouter le point seulement si la distance dépasse 1 km
+            # Add the point only if the distance exceeds 1 meter
             if distance_km > 0.001:
-                trajectory[current_mmsi].append(
-                    (lat, lon, received_at, shipname))
+                trajectory.append((lat, lon, received_at, shipname))
         else:
-            # Ajouter le premier point sans vérifier la distance
-            trajectory[current_mmsi].append((lat, lon, received_at, shipname))
+            # Add the first point without checking the distance
+            trajectory.append((lat, lon, received_at, shipname))
 
-    trajectory = rdp(trajectory, epsilon=0.001)
 
     if trajectory:
-        # Ajouter une ligne pour le trajet
+        # Add a line for the path
         folium.PolyLine(
-            locations=trajectory,  # Use the simplified list of points
+            locations=[(point[0], point[1]) for point in trajectory],  # Use the simplified list of points
             color=list_colors[0],
             weight=2.5,
             opacity=0.5
         ).add_to(m)
 
-        # Ajouter des marqueurs avec opacité
+        # Add markers with opacity
         for idx, (lat, lon, received_at, shipname) in enumerate(trajectory):
             opacity = 1 if idx == 0 or idx == len(trajectory) - 1 else 0
             received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
@@ -262,25 +261,26 @@ def get_map_mmsi():
             folium.CircleMarker(
                 location=[lat, lon],
                 popup=f"""
-                            <div style="width: 200px; white-space: nowrap;">
-                                <b>MMSI:</b> {mmsi}</br>
-                                <b>Nom:</b> {shipname}</br>
-                                <b>Heure:</b> {received_at_str}<br>
-                                <b>Latitude:</b> {lat}<br>
-                                <b>Longitude:</b> {lon}
-                            </div>
-                        """,
-                icon=folium.Icon(color=list_colors[mmsi], icon='ship'),
+                    <div style="width: 200px; white-space: nowrap;">
+                        <b>MMSI:</b> {mmsi}</br>
+                        <b>Nom:</b> {shipname}</br>
+                        <b>Heure:</b> {received_at_str}<br>
+                        <b>Latitude:</b> {lat}<br>
+                        <b>Longitude:</b> {lon}
+                    </div>
+                """,
+                icon=folium.Icon(color=list_colors[0], icon='ship'),
                 opacity=opacity,
                 fill=True,
                 radius=8
             ).add_to(m)
 
-    # Générer le HTML de la carte
+    # Generate the HTML for the map
     map_html = m._repr_html_()
 
-    # Retourner le HTML
+    # Return the HTML
     return render_template_string(map_html)
+
 
 
 @app.route('/get_heatmap', methods=['GET', 'POST'])

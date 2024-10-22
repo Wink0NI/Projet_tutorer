@@ -77,7 +77,7 @@
                 console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
                 Swal.fire({
                     title: 'Erreur',
-                    text: 'Une erreur est survenue lors de la récupération des données.',
+                    text: error.message,
                     icon: 'error',
                     confirmButtonText: 'OK'
                 });
