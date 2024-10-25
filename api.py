@@ -4,7 +4,7 @@ import asyncio
 import json
 from datetime import datetime, timezone
 import psycopg2
-import functions.edit_str as edit_str
+import functions.boat_plugins as boat_plugins
 import math
 from requests_html import AsyncHTMLSession
 
@@ -132,10 +132,10 @@ async def connect_ais_stream():
                         cur.execute("SELECT * FROM ais_information_vessel WHERE mmsi = %s", [mmsi])
                         cur.fetchone()
                         if cur.rowcount > 0:
-                            date = edit_str.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
+                            date = boat_plugins.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
 
-                            shiptype = await edit_str.get_ship_type(mmsi, session=session) 
-                            shiptype = edit_str.assign_ship_type_number(shiptype)
+                            shiptype = await boat_plugins.get_ship_type(mmsi, session=session) 
+                            shiptype = boat_plugins.assign_ship_type_number(shiptype)
                             
                             row = [mmsi, 0, 0, date, 0, ais_message["MessageID"], None, None, message["MetaData"]["ShipName"], shiptype,
                                 None, None, None, None, None, None, None, None, 0, 0,

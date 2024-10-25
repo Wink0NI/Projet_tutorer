@@ -15,60 +15,13 @@
     <!-- Include Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
+    <link rel="stylesheet" href="css/style_index.css">
+
     <!-- Include Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-    <style>
-        body {
-            background-color: #f4f4f4;
-        }
+    <script async src="js/script_index.js"></script>
 
-        .container {
-            margin-top: 50px;
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .title {
-            color: #3273dc;
-        }
-
-        .button.is-primary {
-            background-color: #3273dc;
-            border-color: transparent;
-            transition: background-color 0.3s;
-        }
-
-        .button.is-primary:hover {
-            background-color: #276c99;
-        }
-
-        .checkbox label {
-            font-weight: 500;
-        }
-
-        .field {
-            margin-bottom: 20px;
-        }
-
-        #contenu,
-        #heatmap {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #e8f5e9;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            width: 800px;
-        }
-
-        /* Optional: Customize the position or size of the calendar icon */
-        .has-icons-right .icon {
-            pointer-events: none;
-            /* Prevents the icon from being clickable */
-        }
-    </style>
 </head>
 
 <body>
@@ -78,9 +31,10 @@
             <form id="searchForm">
                 <div class="field">
                     <label class="label">Shiptype du bateau</label>
-                    <div class="control">
-                        <input class="input" type="text" id="shiptype" placeholder="Entrez le shiptype">
-                    </div>
+                    <select name="shiptype" id="shiptype-select">
+                        <!-- Les options seront insérées ici par JavaScript -->
+                    </select>
+                    
                 </div>
 
                 <div class="field">
@@ -115,164 +69,7 @@
 
     <!-- Inclure SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script>
-        document.getElementById('date').addEventListener('input', function (event) {
-            let value = event.target.value;
-
-            // Supprimer tout ce qui n'est pas un chiffre
-            value = value.replace(/\D/g, '');
-
-            // Ajouter des séparateurs (/) en fonction de la longueur du texte
-            if (value.length > 2) {
-                value = value.slice(0, 2) + '/' + value.slice(2);
-            }
-            if (value.length > 5) {
-                value = value.slice(0, 5) + '/' + value.slice(5);
-            }
-
-            // Mettre à jour la valeur du champ
-            event.target.value = value;
-        });
-
-        document.getElementById('searchForm').addEventListener('submit', function (event) {
-            event.preventDefault(); // Empêche le formulaire de se soumettre normalement
-
-            // Récupérer les valeurs des champs du formulaire
-            const shiptype = document.getElementById('shiptype').value;
-            let date = document.getElementById('date').value;
-
-            if (date.length === 0) {
-                date_format = new Date();
-                let jour = date_format.getDate();
-                let month = date_format.getMonth() + 1;
-                if (jour < 10) {
-                    jour = "0" + jour;
-                }
-                if (month < 10) {
-                    month = "0" + month;
-                }
-                date = jour + "/" + month + "/" + date_format.getFullYear()
-            }
-            const includeStops = document.getElementById('includeStops').checked;
-
-            // Vérifier que la date est au bon format (JJ/MM/AAAA)
-            const datePattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
-            if (!datePattern.test(date)) {
-                Swal.fire({
-                    title: 'Erreur',
-                    text: 'Veuillez entrer une date au format JJ/MM/AAAA.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-                return;
-            }
-
-            fetch('http://localhost:5000/get_map', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shiptype: shiptype,
-                    date: date,
-                    includeStops: includeStops
-                })
-            })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('contenu').innerHTML = data;
-                })
-                .catch(error => {
-                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
-                });
-
-            fetch('http://localhost:5000/get_heatmap', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shiptype: shiptype,
-                    date: date,
-                    includeStops: includeStops
-                })
-            })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('heatmap').innerHTML = data;
-                })
-                .catch(error => {
-                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
-                });
-
-            // Afficher un message de succès avec les valeurs du formulaire
-            Swal.fire({
-                title: 'Recherche effectuée',
-                text: `MMSI: ${mmsi}\nDate: ${date}\nInclure les arrêts: ${includeStops}`,
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const currentdate = new Date(Date.now());
-            let date = currentdate.getDate();
-            let month = currentdate.getMonth() + 1;
-            if (date < 10) {
-                date = "0" + date;
-            }
-            if (month < 10) {
-                month = "0" + month;
-            }
-
-            fetch('http://localhost:5000/get_map', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shiptype: "",
-                    date: date + "/" + month + "/" + currentdate.getFullYear(),
-                    includeStops: false
-                })
-            })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('contenu').innerHTML = data;
-                })
-                .catch(error => {
-                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
-                });
-
-            fetch('http://localhost:5000/get_heatmap', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shiptype: "",
-                    date: date + "/" + month + "/" + currentdate.getFullYear(),
-                    includeStops: false
-                })
-            })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('heatmap').innerHTML = data;
-                })
-                .catch(error => {
-                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
-                });
-
-            flatpickr("#date", {
-                dateFormat: "d/m/Y", // Format: JJ/MM/AAAA
-                allowInput: false,   // Prevent manual input
-                maxDate: "today"     // Optional: Prevent future dates
-            });
-
-        });
-
-
-    </script>
+    
 </body>
 
 </html>

@@ -8,6 +8,7 @@ import datetime
 from geopy.distance import geodesic
 from folium.plugins import HeatMap
 
+from rdp import rdp
 
 
 # Convert RGBA colors to HEX format
@@ -27,7 +28,83 @@ DATABASE_CONFIG = {
     'user': 'admin',
     'password': 'admin'
 }
+conn = psycopg2.connect(
+    host="localhost",
+    database="Projet_tutorer",
+    user="admin",
+    password="admin"
+)
 
+# Créer un curseur
+cur = conn.cursor()
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS ais_information_vessel (
+    mmsi BIGINT,
+    signalpower FLOAT,
+    ppm FLOAT,
+    received_at TIMESTAMP,
+    station_id BIGINT,
+    msg_id INT,
+    imo BIGINT,
+    callsign VARCHAR(255),
+    shipname VARCHAR(255),
+    shiptype INT,
+    to_port INT,
+    to_bow INT,
+    to_stern INT,
+    to_starboard INT,
+    eta TIMESTAMP,
+    draught FLOAT,
+    destination VARCHAR(255),
+    status INT,
+    turn FLOAT,
+    speed FLOAT,
+    lat FLOAT,
+    lon FLOAT,
+    course FLOAT,
+    heading FLOAT,
+    aid_type INT,
+    alt FLOAT,
+    count INT,
+    msg_types INT,
+    channels INT,
+    PRIMARY KEY (mmsi)
+);
+""")
+##################################################################################################################################################################
+
+# Création de la table "ais_positions"
+cur.execute("""
+CREATE TABLE IF NOT EXISTS ais_positions (
+    mmsi INT NOT NULL,
+    received_at TIMESTAMP NOT NULL,
+    station_id INT,
+    msg_id INT,
+    status VARCHAR(50),
+    turn FLOAT,
+    speed FLOAT,
+    lat FLOAT,
+    lon FLOAT,
+    course FLOAT,
+    heading FLOAT,
+    geom VARCHAR(255)
+);
+""")
+
+
+#table shiptype
+cur.execute("""
+CREATE TABLE IF NOT EXISTS shiptype (
+    id_shiptype INT NOT NULL PRIMARY KEY,
+    shiptype VARCHAR(255) NOT NULL
+);
+""")
+
+conn.commit()
+
+conn.close()
+cur.close()
 
 def convertir_date(date_str):
     # Définir le format d'entrée
@@ -211,49 +288,49 @@ def get_map_mmsi():
     WHERE aiv.shipname NOT LIKE '%TEST%'
     AND ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
     AND ap.mmsi = {mmsi}
-    ORDER BY ap.received_at
-    """)
+    ORDER BY ap.received_at DESC
+""")
 
-    # Define the starting point of the ship
+    # Définir le point de départ du bateau
     direction = [-22.2711, 166.4380, datetime.datetime.now()
-                 ] if len(rows) == 0 else [float(rows[0][0]), float(rows[0][1]), rows[0][2]]
+                 ] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
 
-    # Create a Folium map
+    # Créer une carte Folium de Nouméa
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
     trajectory = []
+    i = 0
 
-    # Traverse the data for each row (GPS point)
+    # Parcourir les données pour chaque ligne (chaque point GPS)
     for row in rows:
         lat, lon, received_at, shipname, current_mmsi = row
 
-        # Convert lat/lon to floats
-        lat = float(lat)
-        lon = float(lon)
-
-        # If the ship already has a point in its trajectory, check the distance
-        if len(trajectory) > 0:
-            last_point = [trajectory[-1][0], trajectory[-1][1]]  # Lat/Lon only
+        # Si le navire a déjà un point dans sa trajectoire, on vérifie la distance
+        if len(trajectory[current_mmsi]) > 0:
+            last_point = [trajectory[current_mmsi][-1][0],
+                          trajectory[current_mmsi][-1][1]]  # Lat/Lon only
             distance_km = geodesic(last_point, (lat, lon)).km
 
-            # Add the point only if the distance exceeds 1 meter
+            # Ajouter le point seulement si la distance dépasse 1 km
             if distance_km > 0.001:
-                trajectory.append((lat, lon, received_at, shipname))
+                trajectory[current_mmsi].append(
+                    (lat, lon, received_at, shipname))
         else:
-            # Add the first point without checking the distance
-            trajectory.append((lat, lon, received_at, shipname))
+            # Ajouter le premier point sans vérifier la distance
+            trajectory[current_mmsi].append((lat, lon, received_at, shipname))
 
+    trajectory = rdp(trajectory, epsilon=0.001)
 
     if trajectory:
-        # Add a line for the path
+        # Ajouter une ligne pour le trajet
         folium.PolyLine(
-            locations=[(point[0], point[1]) for point in trajectory],  # Use the simplified list of points
+            locations=trajectory,  # Use the simplified list of points
             color=list_colors[0],
             weight=2.5,
             opacity=0.5
         ).add_to(m)
 
-        # Add markers with opacity
+        # Ajouter des marqueurs avec opacité
         for idx, (lat, lon, received_at, shipname) in enumerate(trajectory):
             opacity = 1 if idx == 0 or idx == len(trajectory) - 1 else 0
             received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
@@ -261,26 +338,25 @@ def get_map_mmsi():
             folium.CircleMarker(
                 location=[lat, lon],
                 popup=f"""
-                    <div style="width: 200px; white-space: nowrap;">
-                        <b>MMSI:</b> {mmsi}</br>
-                        <b>Nom:</b> {shipname}</br>
-                        <b>Heure:</b> {received_at_str}<br>
-                        <b>Latitude:</b> {lat}<br>
-                        <b>Longitude:</b> {lon}
-                    </div>
-                """,
-                icon=folium.Icon(color=list_colors[0], icon='ship'),
+                            <div style="width: 200px; white-space: nowrap;">
+                                <b>MMSI:</b> {mmsi}</br>
+                                <b>Nom:</b> {shipname}</br>
+                                <b>Heure:</b> {received_at_str}<br>
+                                <b>Latitude:</b> {lat}<br>
+                                <b>Longitude:</b> {lon}
+                            </div>
+                        """,
+                icon=folium.Icon(color=list_colors[mmsi], icon='ship'),
                 opacity=opacity,
                 fill=True,
                 radius=8
             ).add_to(m)
 
-    # Generate the HTML for the map
+    # Générer le HTML de la carte
     map_html = m._repr_html_()
 
-    # Return the HTML
+    # Retourner le HTML
     return render_template_string(map_html)
-
 
 
 @app.route('/get_heatmap', methods=['GET', 'POST'])
@@ -336,6 +412,24 @@ def get_heatmap():
 
     # Return the map as a rendered HTML string
     return render_template_string(map_html)
+
+@app.route('/get_shiptypes', methods=['GET'])
+def get_shiptype():
+    conn = get_db_connection()  # Assure-toi que get_db_connection est bien définie
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT DISTINCT s.shiptype
+        FROM shiptype s
+        JOIN ais_information_vessel aiv ON s.id_shiptype = aiv.shiptype
+    """)
+    rows = cursor.fetchall()
+
+    # Transformer les résultats en une liste
+    shiptypes = [row[0] for row in rows]
+
+    # Retourner les données sous forme de JSON
+    return jsonify(shiptypes)
 
 if __name__ == '__main__':
     app.run(debug=True)

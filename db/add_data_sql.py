@@ -6,7 +6,7 @@ import os
 # Ajouter le chemin du dossier parent pour accéder à functions
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from functions.edit_str import *
+from functions.boat_plugins import *
 
 # Connexion à la base de données PostgreSQL
 conn = psycopg2.connect(
