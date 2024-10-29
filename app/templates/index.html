@@ -149,12 +149,14 @@
 
     <script>
 
-        const shiptype = document.getElementById('shiptype-select');
-        let date = document.getElementById('date');
-        const includeStops = document.getElementById('includeStops');
 
-        function change_map(event, init=true) {
-            if (event) event.preventDefault(); // Empêche le formulaire de se soumettre normalement
+
+        function change_map(init = true) {
+
+            const shiptype = document.getElementById('shiptype-select');
+            let date = document.getElementById('date');
+            const includeStops = document.getElementById('includeStops');
+            console.log(date.value)
 
 
             fetch('http://localhost:5000/get_map', {
@@ -199,11 +201,14 @@
         };
 
         const form = document.getElementById("searchForm");
-        form.addEventListener('submit', change_map(event, false));
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Empêche le formulaire de se soumettre normalement;
+            change_map(false);
+        });
 
         document.addEventListener('DOMContentLoaded', function () {
 
-            change_map(null, true);
+            change_map(true);
 
             flatpickr("#date", {
                 dateFormat: "d/m/Y", // Format: JJ/MM/AAAA

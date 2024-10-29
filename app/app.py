@@ -455,12 +455,12 @@ def get_heatmap():
     if rows:
         # Group data into 24 hourly intervals
         for lat, lon, timestamp in rows:
-            # Extract hour from timestamp
             hour = timestamp.hour
             heat_data[hour].append([lat, lon])  # Append lat/lon to the correct hour's list
+        
 
         # Ajouter la heatmap avec le temps
-        HeatMapWithTime(heat_data, radius=15, auto_play=True, max_opacity=0.8).add_to(m)
+        HeatMapWithTime(heat_data, radius=15, auto_play=True, max_opacity=0.8, index=[f"{hour}h" for hour in range(24)]).add_to(m)
     else:
         HeatMap(heat_data, radius=15, max_opacity=0.8).add_to(m)
 
