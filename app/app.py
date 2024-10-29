@@ -265,7 +265,6 @@ def get_map():
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
     i = 0
-    print(stamp)
 
     # Parcourir les données pour chaque ligne (chaque point GPS)
     for row in rows:
@@ -349,7 +348,7 @@ def get_map_mmsi():
         if len(trajectory) > 0:
             last_point = [trajectory[-1][0], trajectory[-1][1]]
             distance_km = geodesic(last_point, (lat, lon)).km
-            print(distance_km)
+
             if distance_km > 0.01:
                 trajectory.append((lat, lon, received_at, shipname))
         else:
