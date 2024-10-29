@@ -5,9 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boat Information - {{ boat.shipname }}</title>
     <!-- Include Bulma CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
     <!-- Include SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <!-- Inclure SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <!-- Include Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Include Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         body {
             background-color: #f4f4f4;
@@ -74,13 +83,14 @@
             <li><strong>Speed:</strong> {{ boat.speed }} knots</li>
         </ul>
 
-        <!-- Date Selection and Update Button -->
         <div class="field">
-            <label class="label">Select Date</label>
-            <div class="control">
-                <input type="date" class="input" id="dateInput" required>
+            <label class="label">Date</label>
+            <div class="control has-icons-right">
+                <input class="input" type="text" id="date" placeholder="JJ/MM/AAAA">
+                <span class="icon is-small is-right">
+                    <i class="fas fa-calendar-alt"></i>
+                </span>
             </div>
-            <button class="button is-primary" style="margin-top: 10px;" onclick="updateMap()">Update Map</button>
         </div>
 
         <div id="contenu" style="width: 100%; margin-top: 20px;"></div>
@@ -89,6 +99,12 @@
     <!-- Include SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
+        let date = document.getElementById('date');
+
+        date.addEventListener('change', function() {
+            loadMap(this.value);
+        })
+
         // Initial map load
         document.addEventListener('DOMContentLoaded', function () {
             loadMap();
@@ -140,6 +156,12 @@
                 });
             }
         }
+
+        flatpickr("#date", {
+                dateFormat: "d/m/Y", // Format: JJ/MM/AAAA
+                allowInput: false,   // Prevent manual input
+                maxDate: "today"     // Optional: Prevent future dates
+            });
 
         function redirectToMMSI(event) {
             event.preventDefault();

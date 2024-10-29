@@ -6,7 +6,7 @@ import folium
 import datetime
 
 from geopy.distance import geodesic
-from folium.plugins import HeatMapWithTime
+from folium.plugins import HeatMapWithTime, HeatMap
 
 
 # Convert RGBA colors to HEX format
@@ -243,7 +243,7 @@ def get_map():
         stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
     else:
         date = convertir_date(date)
-        stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
+        stamp = f"ap.received_at BETWEEN '{date} 00:00:00'::timestamp AND '{date} 23:59:59'::timestamp"
 
     rows = execute_query(f"""
     SELECT DISTINCT ON (ap.mmsi) ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
@@ -324,7 +324,7 @@ def get_map_mmsi():
         stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
     else:
         date = convertir_date(date)
-        stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
+        stamp = f"ap.received_at BETWEEN '{date} 00:00:00'::timestamp AND '{date} 23:59:59'::timestamp"
 
 
     rows = execute_query(f"""
@@ -423,7 +423,7 @@ def get_heatmap():
         stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
     else:
         date = convertir_date(date)
-        stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
+        stamp = f"ap.received_at BETWEEN '{date} 00:00:00'::timestamp AND '{date} 23:59:59'::timestamp"
 
     # SQL query to fetch latitude, longitude, and timestamp from ais_positions
     query = f"""
@@ -441,27 +441,10 @@ def get_heatmap():
     # Fetching the data from the database
     rows = execute_query(query)
 
-    # Regrouper les points par intervalles de temps (par exemple, chaque heure)
-    heat_data = []
-    interval_data = []
-    current_interval = None
+        # Initialize an empty list to hold data for each hour
+    heat_data = [[] for _ in range(24)]  # 24 lists for each hour in the day
 
-    for lat, lon, timestamp in rows:
-        # Convertir le timestamp en heure pour grouper par heure
-        time_str = timestamp.strftime('%Y-%m-%d %H:00:00')
-
-        # Si l'intervalle change, ajouter le groupe existant et démarrer un nouveau groupe
-        if current_interval != time_str:
-            if interval_data:
-                heat_data.append(interval_data)
-            interval_data = []
-            current_interval = time_str
-
-        interval_data.append([lat, lon])
-
-    # Ajouter le dernier groupe d'intervalle
-    if interval_data:
-        heat_data.append(interval_data)
+    
 
     # Définir un point de départ par défaut si aucune donnée n’est trouvée
     direction = [-22.2711, 166.4380] if len(rows) == 0 else [rows[0][0], rows[0][1]]
@@ -469,8 +452,17 @@ def get_heatmap():
     # Créer une carte centrée sur la région spécifiée
     m = folium.Map(location=direction, zoom_start=10)
 
-    # Ajouter la heatmap avec le temps
-    HeatMapWithTime(heat_data, radius=15, auto_play=True, max_opacity=0.8).add_to(m)
+    if rows:
+        # Group data into 24 hourly intervals
+        for lat, lon, timestamp in rows:
+            # Extract hour from timestamp
+            hour = timestamp.hour
+            heat_data[hour].append([lat, lon])  # Append lat/lon to the correct hour's list
+
+        # Ajouter la heatmap avec le temps
+        HeatMapWithTime(heat_data, radius=15, auto_play=True, max_opacity=0.8).add_to(m)
+    else:
+        HeatMap(heat_data, radius=15, max_opacity=0.8).add_to(m)
 
     # Générer le code HTML de la carte
     map_html = m._repr_html_()
