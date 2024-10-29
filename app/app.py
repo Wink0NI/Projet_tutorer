@@ -265,7 +265,6 @@ def get_map():
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
     i = 0
-    print(stamp)
 
     # Parcourir les données pour chaque ligne (chaque point GPS)
     for row in rows:
@@ -315,14 +314,25 @@ def get_map_mmsi():
         return jsonify({'error': 'MMSI not provided'}), 400
 
     mmsi = data['mmsi']
-    date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    date = data.get('date', None)  # Expecting date in a specific format
+
+    # Create the timestamp condition based on the presence of the date parameter
+    if not date:
+        # Get current timestamp for 24 hours interval
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
+    else:
+        date = convertir_date(date)
+        stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
+
 
     rows = execute_query(f"""
     SELECT ap.lat, ap.lon, ap.received_at, aiv.shipname, ap.mmsi
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
     WHERE aiv.shipname NOT LIKE '%TEST%'
-    AND ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
+    AND {stamp} 
     AND ap.mmsi = {mmsi}
     ORDER BY ap.received_at DESC
     """)
@@ -349,7 +359,7 @@ def get_map_mmsi():
         if len(trajectory) > 0:
             last_point = [trajectory[-1][0], trajectory[-1][1]]
             distance_km = geodesic(last_point, (lat, lon)).km
-            print(distance_km)
+
             if distance_km > 0.01:
                 trajectory.append((lat, lon, received_at, shipname))
         else:
