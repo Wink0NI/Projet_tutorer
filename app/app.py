@@ -9,7 +9,6 @@ from geopy.distance import geodesic
 from folium.plugins import HeatMap
 
 
-
 # Convert RGBA colors to HEX format
 list_colors = ['red', 'gray', 'green', 'darkgreen', 'darkpurple', 'lightblue', 'black', 'blue', 'lightgreen',
                'darkred', 'pink', 'cadetblue', 'darkblue', 'white', 'lightgray', 'orange', 'purple', 'beige']
@@ -92,7 +91,7 @@ CREATE TABLE IF NOT EXISTS ais_positions (
 """)
 
 
-#table shiptype
+# table shiptype
 cur.execute("""
 CREATE TABLE IF NOT EXISTS shiptype (
     id_shiptype INT NOT NULL PRIMARY KEY,
@@ -104,6 +103,7 @@ conn.commit()
 
 conn.close()
 cur.close()
+
 
 def convertir_date(date_str):
     # Définir le format d'entrée
@@ -173,21 +173,27 @@ def get_boat_info(mmsi):
     else:
         return None
 
+
 @app.route('/mmsi/name/<string:mmsi_name>', methods=['GET'])
 def get_vessel_info(mmsi_name):
     conn = get_db_connection()
     cur = conn.cursor()
-    
-    # Use parameterized queries to prevent SQL injection
-    query = """
-        SELECT *
-        FROM ais_information_vessel
-        WHERE shipname = %s
-    """
-    
-    cur.execute(query, [mmsi_name])
+
+    query_name = f"""
+    SELECT *
+    FROM ais_information_vessel
+    WHERE UPPER(shipname) LIKE '%{mmsi_name.upper()}%'
+    AND UPPER(shipname) NOT LIKE '%TEST%'
+    ORDER BY received_at DESC
+"""
+
+    # Execute query with mmsi_name parameter
+    cur.execute(query_name)
     result = cur.fetchone()
-    
+
+
+
+
     cur.close()
     conn.close()
 
@@ -200,6 +206,7 @@ def get_vessel_info(mmsi_name):
     }
 
     return jsonify(vessel_info)
+
 
 @app.route('/mmsi/<mmsi>', methods=['GET'])
 def info_boat(mmsi):
@@ -321,7 +328,8 @@ def get_map_mmsi():
     """)
 
     # Define the starting point of the map
-    direction = [-22.2711, 166.4380, datetime.datetime.now()] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
+    direction = [-22.2711, 166.4380, datetime.datetime.now()
+                 ] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
     # Process each row to build the trajectory
@@ -348,7 +356,8 @@ def get_map_mmsi():
             trajectory.append((lat, lon, received_at, shipname))
 
     # Now add to the map, filtering only valid (lat, lon) points
-    valid_locations = [(lat, lon) for lat, lon, _, _ in trajectory if lat is not None and lon is not None]
+    valid_locations = [(lat, lon) for lat, lon, _,
+                       _ in trajectory if lat is not None and lon is not None]
 
     if valid_locations:
         folium.PolyLine(
@@ -383,8 +392,6 @@ def get_map_mmsi():
             radius=8
         ).add_to(m)
 
-
-
     map_html = m._repr_html_()
 
     return render_template_string(map_html)
@@ -408,7 +415,6 @@ def get_heatmap():
         date = convertir_date(date)
         stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
 
-
     # SQL query to fetch latitude and longitude from ais_positions
     query = f"""
     SELECT ap.lat, ap.lon
@@ -420,7 +426,7 @@ def get_heatmap():
     {f" AND s.shiptype = '{shiptype}'" if len(shiptype) > 0 else ""} 
     {f" AND ap.speed > 0.5" if includeStops else ""}
     """
-    
+
     # Fetching the data from the database
     rows = execute_query(query)
 
@@ -430,7 +436,6 @@ def get_heatmap():
 
     # Créer une carte Folium de Nouméa
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
-
 
     # Prepare the data for the heatmap
     heat_data = [[lat, lon] for lat, lon in rows]
@@ -443,6 +448,7 @@ def get_heatmap():
 
     # Return the map as a rendered HTML string
     return render_template_string(map_html)
+
 
 @app.route('/get_shiptypes', methods=['GET'])
 def get_shiptype():
@@ -462,9 +468,11 @@ def get_shiptype():
     # Retourner les données sous forme de JSON
     return jsonify(shiptypes)
 
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html'), 404
+
 
 if __name__ == '__main__':
     app.run(debug=True)
