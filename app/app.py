@@ -6,7 +6,7 @@ import folium
 import datetime
 
 from geopy.distance import geodesic
-from folium.plugins import HeatMap
+from folium.plugins import HeatMapWithTime
 
 
 # Convert RGBA colors to HEX format
@@ -404,7 +404,7 @@ def get_heatmap():
     shiptype = data['shiptype']
     includeStops = data['includeStops']
 
-    date = data.get('date', None)  # Expecting date in a specific format
+    date = data.get('date', None)
 
     # Create the timestamp condition based on the presence of the date parameter
     if not date:
@@ -415,38 +415,57 @@ def get_heatmap():
         date = convertir_date(date)
         stamp = f"'{date}'::timestamp <= ap.received_at AND ap.received_at < '{date}'::timestamp + INTERVAL '24 hours'"
 
-    # SQL query to fetch latitude and longitude from ais_positions
+    # SQL query to fetch latitude, longitude, and timestamp from ais_positions
     query = f"""
-    SELECT ap.lat, ap.lon
+    SELECT ap.lat, ap.lon, ap.received_at
     FROM ais_positions ap
     JOIN ais_information_vessel aiv ON ap.mmsi = aiv.mmsi
-    {f" JOIN shiptype s  ON aiv.shiptype = s.id_shiptype" if len(shiptype) > 0 else ""}
+    {f" JOIN shiptype s ON aiv.shiptype = s.id_shiptype" if len(shiptype) > 0 else ""}
     WHERE aiv.shipname NOT LIKE '%TEST%'
     AND {stamp}
-    {f" AND s.shiptype = '{shiptype}'" if len(shiptype) > 0 else ""} 
+    {f" AND s.shiptype = '{shiptype}'" if len(shiptype) > 0 else ""}
     {f" AND ap.speed > 0.5" if includeStops else ""}
+    ORDER BY ap.received_at
     """
 
     # Fetching the data from the database
     rows = execute_query(query)
 
-    # Définir le point de départ du bateau
-    direction = [-22.2711, 166.4380
-                 ] if len(rows) == 0 else [rows[0][0], rows[0][1]]
+    # Regrouper les points par intervalles de temps (par exemple, chaque heure)
+    heat_data = []
+    interval_data = []
+    current_interval = None
 
-    # Créer une carte Folium de Nouméa
-    m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
+    for lat, lon, timestamp in rows:
+        # Convertir le timestamp en heure pour grouper par heure
+        time_str = timestamp.strftime('%Y-%m-%d %H:00:00')
 
-    # Prepare the data for the heatmap
-    heat_data = [[lat, lon] for lat, lon in rows]
+        # Si l'intervalle change, ajouter le groupe existant et démarrer un nouveau groupe
+        if current_interval != time_str:
+            if interval_data:
+                heat_data.append(interval_data)
+            interval_data = []
+            current_interval = time_str
 
-    # Create the heatmap layer
-    HeatMap(heat_data).add_to(m)
+        interval_data.append([lat, lon])
 
-    # Generate the HTML representation of the map
+    # Ajouter le dernier groupe d'intervalle
+    if interval_data:
+        heat_data.append(interval_data)
+
+    # Définir un point de départ par défaut si aucune donnée n’est trouvée
+    direction = [-22.2711, 166.4380] if len(rows) == 0 else [rows[0][0], rows[0][1]]
+
+    # Créer une carte centrée sur la région spécifiée
+    m = folium.Map(location=direction, zoom_start=10)
+
+    # Ajouter la heatmap avec le temps
+    HeatMapWithTime(heat_data, radius=15, auto_play=True, max_opacity=0.8).add_to(m)
+
+    # Générer le code HTML de la carte
     map_html = m._repr_html_()
 
-    # Return the map as a rendered HTML string
+    # Retourner la carte en tant que chaîne HTML
     return render_template_string(map_html)
 
 
