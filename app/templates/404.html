@@ -3,39 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boat Information - {{ boat.shipname }}</title>
-    <!-- Include Bulma CSS -->
+    <title>404 Not Found</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
-    <!-- Include SweetAlert2 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <style>
-        body {
-            background-color: #f4f4f4;
-            padding: 20px;
-        }
-        .container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin: auto;
-            max-width: 1000px;
-        }
-        h1 {
-            color: #3273dc;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        ul li {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        ul li:last-child {
-            border-bottom: none;
-        }
-    </style>
 </head>
 <body>
     <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -64,52 +33,20 @@
         </div>
     </nav>
 
-    <div class="container">
-        <h1 class="title">Information for {{ boat.shipname }}</h1>
-        <ul>
-            <li><strong>MMSI:</strong> {{ boat.mmsi }}</li>
-            <li><strong>Last Received:</strong> {{ boat.received_at }}</li>
-            <li><strong>Latitude:</strong> {{ boat.lat }}</li>
-            <li><strong>Longitude:</strong> {{ boat.lon }}</li>
-            <li><strong>Speed:</strong> {{ boat.speed }} knots</li>
-        </ul>
-
-        <div id="contenu" style="width: 100%; margin-top: 20px;"></div>
-    </div>
-
-    <!-- Include SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <section class="hero is-danger">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                <h1 class="title">
+                    404 Not Found
+                </h1>
+                <h2 class="subtitle">
+                    Oops! The page you're looking for doesn't exist.
+                </h2>
+                <a class="button is-light" href="/">Go back to Home</a>
+            </div>
+        </div>
+    </section>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            fetch('http://localhost:5000/get_map_mmsi', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    mmsi: "{{ boat.mmsi }}"
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                return response.text();
-            })
-            .then(data => {
-                document.getElementById('contenu').innerHTML = data;
-            })
-            .catch(error => {
-                console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
-                Swal.fire({
-                    title: 'Erreur',
-                    text: error.message,
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            });
-        });
-
         function redirectToMMSI(event) {
             event.preventDefault(); // Prevent the form from submitting the traditional way
             const mmsi = document.getElementById('mmsiInput').value; // Get the MMSI value

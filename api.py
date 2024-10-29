@@ -112,7 +112,6 @@ async def connect_ais_stream():
 
         async for message_json in websocket:
             message = json.loads(message_json)
-            print(message)
             message_type = message["MessageType"]
 
             if message_type == "PositionReport":
@@ -122,17 +121,18 @@ async def connect_ais_stream():
                 mmsi = ais_message["UserID"]
                 latitude = ais_message['Latitude']
                 longitude = ais_message['Longitude']
+                date = boat_plugins.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
 
                 # Vérifier si la position est dans la zone de Sydney
                 if -34.1183 <= latitude <= -33.7030 and 150.7032 <= longitude <= 151.3427:
-                    print(f"[{datetime.now(timezone.utc)}] ShipId: {ais_message['UserID']} "
+                
+                    print(f"[{ date }] ShipId: {ais_message['UserID']} ShipName: {message['MetaData']['ShipName']} "
                           f"Latitude: {latitude} Longitude: {longitude}")
                     
                     if mmsi not in list_mmsi.keys():
                         cur.execute("SELECT * FROM ais_information_vessel WHERE mmsi = %s", [mmsi])
-                        cur.fetchone()
-                        if cur.rowcount > 0:
-                            date = boat_plugins.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
+                        vessel_info = cur.fetchone()
+                        if vessel_info:
 
                             shiptype = await boat_plugins.get_ship_type(mmsi, session=session) 
                             shiptype = boat_plugins.assign_ship_type_number(shiptype)
@@ -152,7 +152,6 @@ async def connect_ais_stream():
 
                         # Calculate speed
                         vitesse = calculate_speed(prev_lat, prev_lon, prev_time, latitude, longitude, date)
-                        print(vitesse)
 
 
                     row = [mmsi, date, 0, ais_message["MessageID"], ais_message["NavigationalStatus"], 0, vitesse, latitude, longitude, None, None, None]

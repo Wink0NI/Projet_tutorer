@@ -8,7 +8,6 @@ import datetime
 from geopy.distance import geodesic
 from folium.plugins import HeatMap
 
-from rdp import rdp
 
 
 # Convert RGBA colors to HEX format
@@ -174,6 +173,33 @@ def get_boat_info(mmsi):
     else:
         return None
 
+@app.route('/mmsi/name/<string:mmsi_name>', methods=['GET'])
+def get_vessel_info(mmsi_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Use parameterized queries to prevent SQL injection
+    query = """
+        SELECT *
+        FROM ais_information_vessel
+        WHERE shipname = %s
+    """
+    
+    cur.execute(query, [mmsi_name])
+    result = cur.fetchone()
+    
+    cur.close()
+    conn.close()
+
+    if result is None:
+        return jsonify({'error': 'Vessel not found'}), 404
+
+    # Construct the response dictionary
+    vessel_info = {
+        'mmsi': result[0]
+    }
+
+    return jsonify(vessel_info)
 
 @app.route('/mmsi/<mmsi>', methods=['GET'])
 def info_boat(mmsi):
@@ -204,7 +230,7 @@ def get_map():
     date = data.get('date', None)  # Expecting date in a specific format
 
     # Create the timestamp condition based on the presence of the date parameter
-    if date is None:
+    if not date:
         # Get current timestamp for 24 hours interval
         current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
@@ -250,12 +276,15 @@ def get_map():
             radius=8,  # Size of the circle
             popup=f"""
                     <div style="width: 200px; white-space: nowrap;">
-                        <b>MMSI:</b> {current_mmsi}</br>
-                        <b>Nom:</b> {shipname}</br>
-                        <b>Heure:</b> {received_at_str}<br>
-                        <b>Latitude:</b> {lat}<br>
-                        <b>Longitude:</b> {lon}
-                    </div>
+                                <b>MMSI:</b> {current_mmsi}<br>
+                                <b>Nom:</b> {shipname}<br>
+                                <b>Heure:</b> {received_at_str}<br>
+                                <b>Latitude:</b> {lat}<br>
+                                <b>Longitude:</b> {lon}<br>
+                                <a href="http://localhost:5000/mmsi/{current_mmsi}" target="_blank">
+                                    <button type="button">Information bateau</button>
+                                </a>
+                            </div>
                 """,
             color=list_colors[i],  # Circle color (from list)
             fill=True,
@@ -276,7 +305,7 @@ def get_map_mmsi():
     data = request.get_json()
 
     if 'mmsi' not in data:
-        return jsonify({'error': 'MMSI'}), 400
+        return jsonify({'error': 'MMSI not provided'}), 400
 
     mmsi = data['mmsi']
     date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -289,73 +318,75 @@ def get_map_mmsi():
     AND ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp
     AND ap.mmsi = {mmsi}
     ORDER BY ap.received_at DESC
-""")
+    """)
 
-    # Définir le point de départ du bateau
-    direction = [-22.2711, 166.4380, datetime.datetime.now()
-                 ] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
-
-    # Créer une carte Folium de Nouméa
+    # Define the starting point of the map
+    direction = [-22.2711, 166.4380, datetime.datetime.now()] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]]
     m = folium.Map(location=[direction[0], direction[1]], zoom_start=15)
 
+    # Process each row to build the trajectory
+    # Initialize trajectory list
     trajectory = []
-    i = 0
-
-    # Parcourir les données pour chaque ligne (chaque point GPS)
     for row in rows:
         lat, lon, received_at, shipname, current_mmsi = row
 
-        # Si le navire a déjà un point dans sa trajectoire, on vérifie la distance
-        if len(trajectory[current_mmsi]) > 0:
-            last_point = [trajectory[current_mmsi][-1][0],
-                          trajectory[current_mmsi][-1][1]]  # Lat/Lon only
+        # Convert lat and lon to floats to avoid type errors
+        try:
+            lat = float(lat)
+            lon = float(lon)
+        except ValueError:
+            # Skip this point if lat or lon cannot be converted to float
+            continue
+
+        if len(trajectory) > 0:
+            last_point = [trajectory[-1][0], trajectory[-1][1]]
             distance_km = geodesic(last_point, (lat, lon)).km
-
-            # Ajouter le point seulement si la distance dépasse 1 km
-            if distance_km > 0.001:
-                trajectory[current_mmsi].append(
-                    (lat, lon, received_at, shipname))
+            print(distance_km)
+            if distance_km > 0.01:
+                trajectory.append((lat, lon, received_at, shipname))
         else:
-            # Ajouter le premier point sans vérifier la distance
-            trajectory[current_mmsi].append((lat, lon, received_at, shipname))
+            trajectory.append((lat, lon, received_at, shipname))
 
-    trajectory = rdp(trajectory, epsilon=0.001)
+    # Now add to the map, filtering only valid (lat, lon) points
+    valid_locations = [(lat, lon) for lat, lon, _, _ in trajectory if lat is not None and lon is not None]
 
-    if trajectory:
-        # Ajouter une ligne pour le trajet
+    if valid_locations:
         folium.PolyLine(
-            locations=trajectory,  # Use the simplified list of points
-            color=list_colors[0],
+            locations=valid_locations,
+            color=list_colors[0],  # Default color if mmsi color not found
             weight=2.5,
             opacity=0.5
         ).add_to(m)
 
-        # Ajouter des marqueurs avec opacité
-        for idx, (lat, lon, received_at, shipname) in enumerate(trajectory):
-            opacity = 1 if idx == 0 or idx == len(trajectory) - 1 else 0
-            received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
+    # Adding markers
+    for idx, (lat, lon, received_at, shipname) in enumerate(trajectory):
+        if lat is None or lon is None:
+            continue  # Skip invalid points
 
-            folium.CircleMarker(
-                location=[lat, lon],
-                popup=f"""
-                            <div style="width: 200px; white-space: nowrap;">
-                                <b>MMSI:</b> {mmsi}</br>
-                                <b>Nom:</b> {shipname}</br>
-                                <b>Heure:</b> {received_at_str}<br>
-                                <b>Latitude:</b> {lat}<br>
-                                <b>Longitude:</b> {lon}
-                            </div>
-                        """,
-                icon=folium.Icon(color=list_colors[mmsi], icon='ship'),
-                opacity=opacity,
-                fill=True,
-                radius=8
-            ).add_to(m)
+        opacity = 1 if idx == 0 or idx == len(trajectory) - 1 else 0
+        received_at_str = received_at.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Générer le HTML de la carte
+        folium.CircleMarker(
+            location=[lat, lon],
+            popup=f"""
+                <div style="width: 200px; white-space: nowrap;">
+                    <b>MMSI:</b> {mmsi}<br>
+                    <b>Nom:</b> {shipname}<br>
+                    <b>Heure:</b> {received_at_str}<br>
+                    <b>Latitude:</b> {lat}<br>
+                    <b>Longitude:</b> {lon}<br>
+                </div>
+            """,
+            color=list_colors[0],
+            fill=True,
+            fill_opacity=opacity,
+            radius=8
+        ).add_to(m)
+
+
+
     map_html = m._repr_html_()
 
-    # Retourner le HTML
     return render_template_string(map_html)
 
 
@@ -369,7 +400,7 @@ def get_heatmap():
     date = data.get('date', None)  # Expecting date in a specific format
 
     # Create the timestamp condition based on the presence of the date parameter
-    if date is None:
+    if not date:
         # Get current timestamp for 24 hours interval
         current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
@@ -430,6 +461,10 @@ def get_shiptype():
 
     # Retourner les données sous forme de JSON
     return jsonify(shiptypes)
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html'), 404
 
 if __name__ == '__main__':
     app.run(debug=True)

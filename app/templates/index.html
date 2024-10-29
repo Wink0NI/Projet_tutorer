@@ -15,16 +15,90 @@
     <!-- Include Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-    <link rel="stylesheet" href="css/style_index.css">
-
     <!-- Include Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-    <script async src="js/script_index.js"></script>
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            color: #3273dc;
+        }
+
+        .button.is-primary {
+            background-color: #3273dc;
+            border-color: transparent;
+            transition: background-color 0.3s;
+        }
+
+        .button.is-primary:hover {
+            background-color: #276c99;
+        }
+
+        .checkbox label {
+            font-weight: 500;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        #contenu,
+        #heatmap {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 800px;
+        }
+
+        /* Optional: Customize the position or size of the calendar icon */
+        .has-icons-right .icon {
+            pointer-events: none;
+            /* Prevents the icon from being clickable */
+        }
+    </style>
 
 </head>
 
 <body>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <img src="https://bulma.io/images/bulma-logo.png" alt="Logo" width="112" height="28">
+            </a>
+        </div>
+
+        <div class="navbar-menu">
+
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <form action="" method="get" onsubmit="redirectToMMSI(event)">
+                        <div class="field has-addons">
+                            <div class="control">
+                                <input class="input" type="text" placeholder="Enter MMSI" id="mmsiInput" required>
+                            </div>
+                            <div class="control">
+                                <button class="button is-info" type="submit">Search</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <section class="section">
         <div class="container">
             <h1 class="title">Recherche de Bateau</h1>
@@ -34,7 +108,7 @@
                     <select name="shiptype" id="shiptype-select">
                         <!-- Les options seront insérées ici par JavaScript -->
                     </select>
-                    
+
                 </div>
 
                 <div class="field">
@@ -69,7 +143,209 @@
 
     <!-- Inclure SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    
+
+    <script>
+
+        document.getElementById('searchForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Empêche le formulaire de se soumettre normalement
+
+            // Récupérer les valeurs des champs du formulaire
+            const shiptype = document.getElementById('shiptype-select').value;
+            let date = document.getElementById('date').value;
+
+            if (date.length === 0) {
+                date_format = new Date();
+                let jour = date_format.getDate();
+                let month = date_format.getMonth() + 1;
+                if (jour < 10) {
+                    jour = "0" + jour;
+                }
+                if (month < 10) {
+                    month = "0" + month;
+                }
+                date = jour + "/" + month + "/" + date_format.getFullYear()
+            }
+            const includeStops = document.getElementById('includeStops').checked;
+
+            // Vérifier que la date est au bon format (JJ/MM/AAAA)
+            const datePattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            if (!datePattern.test(date)) {
+                Swal.fire({
+                    title: 'Erreur',
+                    text: 'Veuillez entrer une date au format JJ/MM/AAAA.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            fetch('http://localhost:5000/get_map', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shiptype: shiptype,
+                    date: date,
+                    includeStops: includeStops
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('contenu').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+
+            fetch('http://localhost:5000/get_heatmap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shiptype: shiptype,
+                    date: date,
+                    includeStops: includeStops
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('heatmap').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+
+
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            fetch('http://localhost:5000/get_map', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shiptype: "",
+                    date: "",
+                    includeStops: false
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('contenu').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+
+            fetch('http://localhost:5000/get_heatmap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shiptype: "",
+                    date: "",
+                    includeStops: false
+                })
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('heatmap').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
+                });
+
+            flatpickr("#date", {
+                dateFormat: "d/m/Y", // Format: JJ/MM/AAAA
+                allowInput: false,   // Prevent manual input
+                maxDate: "today"     // Optional: Prevent future dates
+            });
+            const get_shiptype = document.querySelector("select");
+            fetch('http://localhost:5000/get_shiptypes', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json()) // Si le backend retourne un JSON
+                .then(data => {
+                    const selectElement = document.getElementById('shiptype-select'); // Assure-toi que l'ID existe dans ton HTML
+
+                    // Vider les options existantes
+                    selectElement.innerHTML = '';
+
+                    const defaut = document.createElement('option');
+                    defaut.value = '';
+                    defaut.text = 'Tous types de navires';
+                    selectElement.appendChild(defaut);
+
+
+                    // Ajouter les nouvelles options récupérées
+                    data.forEach(shiptype => {
+                        const option = document.createElement('option');
+                        option.value = shiptype;
+                        option.text = shiptype;
+                        selectElement.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération des types de navires:', error);
+                });
+        })
+
+        function redirectToMMSI(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            const mmsi = document.getElementById('mmsiInput').value; // Get the MMSI value
+
+            fetch('http://localhost:5000/mmsi/name/' + mmsi, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json()) // Si le backend retourne un JSON
+                .then(data => {
+
+                    if (data.error) {
+                        fetch('http://localhost:5000/mmsi/' + mmsi, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => {
+                                if (response.ok) {
+
+                                    window.location.href = `http://localhost:5000/mmsi/${mmsi}`;
+                                }
+                                else Swal.fire({
+                                    title: 'Erreur',
+                                    text: 'Bateau non existant',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }) // Si le backend retourne un JSON
+
+                            .catch(error => {
+                                console.error('Erreur lors de la récupération des types de navires:', error);
+                            });
+
+                    }
+                    else window.location.href = `http://localhost:5000/mmsi/${data.mmsi}`; // Redirect to the MMSI page
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération des types de navires:', error);
+                });
+
+
+        }
+    </script>
+
 </body>
 
 </html>
