@@ -104,7 +104,7 @@ async def connect_ais_stream():
         # Définir les coordonnées pour la zone de Sydney
         subscribe_message = {
             "APIKey": "96f5646e72d992013ac5c379e357cb553d0339c8",
-            "BoundingBoxes": [[[-34.1183, 150.7032], [-33.7030, 151.3427]]]
+            "BoundingBoxes": [[[-39.0, 141.0], [-10.0, 154.0]]]
         }
 
         subscribe_message_json = json.dumps(subscribe_message)
@@ -124,7 +124,7 @@ async def connect_ais_stream():
                 date = boat_plugins.convert_custom_datetime(message["MetaData"]["time_utc"].split(".")[0])
 
                 # Vérifier si la position est dans la zone de Sydney
-                if -34.1183 <= latitude <= -33.7030 and 150.7032 <= longitude <= 151.3427:
+                if -39.0 <= latitude <= -10.0 and 141.0 <= longitude <= 154.0:
                 
                     print(f"[{ date }] ShipId: {ais_message['UserID']} ShipName: {message['MetaData']['ShipName']} "
                           f"Latitude: {latitude} Longitude: {longitude}")
