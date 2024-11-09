@@ -4,6 +4,7 @@ import psycopg2
 import folium
 
 import datetime
+from datetime import timedelta
 
 from geopy.distance import geodesic
 from folium.plugins import HeatMapWithTime, HeatMap
@@ -416,14 +417,17 @@ def get_heatmap():
 
     date = data.get('date', None)
 
+    date_cree = False
+
     # Create the timestamp condition based on the presence of the date parameter
     if not date:
         # Get current timestamp for 24 hours interval
-        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
+        date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        stamp = f"ap.received_at BETWEEN '{date}'::timestamp - INTERVAL '24 hours' AND '{date}'::timestamp"
     else:
         date = convertir_date(date)
-        stamp = f"ap.received_at BETWEEN '{date} 00:00:00'::timestamp AND '{date} 23:59:59'::timestamp"
+        stamp = f"ap.received_at BETWEEN '{date}'::timestamp AND '{date} 23:59:59'::timestamp"
+        date_cree = True
 
     # SQL query to fetch latitude, longitude, and timestamp from ais_positions
     query = f"""
@@ -442,7 +446,7 @@ def get_heatmap():
     rows = execute_query(query)
 
         # Initialize an empty list to hold data for each hour
-    heat_data = [[] for _ in range(24)]  # 24 lists for each hour in the day
+    heat_data = {}  # 24 lists for each hour in the day
 
     
 
@@ -453,14 +457,38 @@ def get_heatmap():
     m = folium.Map(location=direction, zoom_start=10)
 
     if rows:
+        if date_cree:
+            date = date + " 00:00:00"
+        date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+
+        if not date_cree:
+            time_labels = [
+                (date - timedelta(hours=i)).strftime('%A, %B %d, %I %p')
+                for i in range(24)
+            ]
+
+            # Reverse the list to have the oldest time first
+            time_labels.reverse()
+        else:
+            time_labels = [
+                (date + timedelta(hours=i)).strftime('%A, %B %d, %I %p')
+                for i in range(24)
+            ]
+
+
+        for hour in time_labels:
+            heat_data[hour] = []  # Initialize the list for this hour
+
+
         # Group data into 24 hourly intervals
         for lat, lon, timestamp in rows:
-            hour = timestamp.hour
-            heat_data[hour].append([lat, lon])  # Append lat/lon to the correct hour's list
-        
+            # Format the timestamp to "Friday, November 1st, 1 AM" style
+            time_label = timestamp.strftime('%A, %B %d, %I %p')
+            heat_data[time_label].append([lat, lon])  # Append lat/lon to the correct hour's list
 
+     
         # Ajouter la heatmap avec le temps
-        HeatMapWithTime(heat_data, radius=15, auto_play=True, max_opacity=0.8, index=[f"{hour}h" for hour in range(24)]).add_to(m)
+        HeatMapWithTime(list(heat_data.values()), radius=15, auto_play=True, max_opacity=0.8, index=time_labels).add_to(m)
     else:
         HeatMap(heat_data, radius=15, max_opacity=0.8).add_to(m)
 
