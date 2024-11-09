@@ -29,6 +29,21 @@
             margin: auto;
             max-width: 1000px;
         }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .navbar-end {
+            display: flex;
+        }
+
+        .navbar-item {
+            padding: 0 0;
+        }
+
         h1 {
             color: #3273dc;
         }
@@ -49,17 +64,17 @@
     <nav class="navbar" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <a class="navbar-item" href="/">
-                <img src="https://cdn3.iconfinder.com/data/icons/nautical-icons/512/Cruise_Ship-4096.png" alt="Logo" width="40" height="40">
+                <img src="https://cdn3.iconfinder.com/data/icons/nautical-icons/512/Cruise_Ship-4096.png" alt="Logo"
+                    width="40" height="40">
                 <span style="margin-left: 10px; font-weight: bold; font-size: 1.2em;">Ship Tracker</span>
             </a>
         </div>
-        
 
-        <div class="navbar-menu">
-            <div class="navbar-end">
+        <div class="navbar-end">
+            <div id="navbarMenu" class="navbar-menu">
                 <div class="navbar-item">
                     <form action="" method="get" onsubmit="redirectToMMSI(event)">
-                        <div class="field has-addons">
+                        <div class="field has-addons" style="margin-bottom: 0px;">
                             <div class="control">
                                 <input class="input" type="text" placeholder="Enter MMSI" id="mmsiInput" required>
                             </div>
@@ -70,7 +85,13 @@
                     </form>
                 </div>
             </div>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
         </div>
+
     </nav>
 
     <div class="container">
@@ -108,6 +129,26 @@
         // Initial map load
         document.addEventListener('DOMContentLoaded', function () {
             loadMap();
+
+            const navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+            // Check if there are any navbar burgers
+            if (navbarBurgers.length > 0) {
+
+                // Add a click event on each of them
+                navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+
+                        // Get the target from the "data-target" attribute
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+
+                        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
         });
 
         // Function to load or update the map

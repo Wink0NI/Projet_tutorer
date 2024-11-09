@@ -31,6 +31,20 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .navbar-end {
+            display: flex;
+        }
+
+        .navbar-item {
+            padding: 0 0;
+        }
+
         .title {
             color: #3273dc;
         }
@@ -53,20 +67,88 @@
             margin-bottom: 20px;
         }
 
+        #conteneur {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
         #contenu,
         #heatmap {
-            margin-top: 30px;
             padding: 15px;
             background-color: #e8f5e9;
             border: 1px solid #ccc;
             border-radius: 5px;
+        }
+
+        .section-container {
             width: 800px;
+            /* Limite la largeur des sections */
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box {
+            padding: 15px;
+            background-color: #e8f5e9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
 
         /* Optional: Customize the position or size of the calendar icon */
         .has-icons-right .icon {
             pointer-events: none;
             /* Prevents the icon from being clickable */
+        }
+
+        .section-container h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 10px 0;
+            background-color: #c8e6c9;
+            /* Couleur d'arrière-plan légère pour le titre */
+            border-radius: 5px;
+        }
+
+        .styled-field {
+            margin-bottom: 20px;
+        }
+
+        .styled-field .label {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #3273dc;
+            /* Bleu primaire */
+            margin-bottom: 8px;
+        }
+
+        .select-custom {
+            font-size: 1em;
+            border: 2px solid #3273dc;
+            border-radius: 5px;
+            background-color: #f8fafc;
+            transition: border-color 0.3s;
+        }
+
+        .select-custom:hover {
+            border-color: #276c99;
+            /* Teinte plus foncée au survol */
+        }
+
+        .select-custom:focus {
+            outline: none;
+            border-color: #276c99;
+            box-shadow: 0 0 5px rgba(39, 108, 153, 0.4);
+            /* Ombre légère au focus */
+        }
+
+        .icon.is-right {
+            position: absolute;
+            right: 10px;
+            top: 50%;
         }
     </style>
 
@@ -82,13 +164,11 @@
             </a>
         </div>
 
-
-        <div class="navbar-menu">
-
-            <div class="navbar-end">
+        <div class="navbar-end">
+            <div id="navbarMenu" class="navbar-menu">
                 <div class="navbar-item">
                     <form action="" method="get" onsubmit="redirectToMMSI(event)">
-                        <div class="field has-addons">
+                        <div class="field has-addons" style="margin-bottom: 0px;">
                             <div class="control">
                                 <input class="input" type="text" placeholder="Enter MMSI" id="mmsiInput" required>
                             </div>
@@ -99,20 +179,33 @@
                     </form>
                 </div>
             </div>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
         </div>
+
     </nav>
+
 
     <section class="section">
         <div class="container">
             <h1 class="title">Recherche de Bateau</h1>
             <form id="searchForm">
-                <div class="field">
+                <div class="field styled-field">
                     <label class="label">Shiptype du bateau</label>
-                    <select name="shiptype" id="shiptype-select">
-                        <!-- Les options seront insérées ici par JavaScript -->
-                    </select>
-
+                    <div class="control has-icons-right">
+                        <select class="input select-custom" name="shiptype" id="shiptype-select">
+                            <!-- Les options seront insérées ici par JavaScript -->
+                        </select>
+                        <span class="icon is-small is-right">
+                            <i class="fas fa-chevron-down"></i>
+                        </span>
+                    </div>
                 </div>
+
+
 
                 <div class="field">
                     <label class="label">Date</label>
@@ -140,8 +233,21 @@
             </form>
         </div>
 
-        <div id="contenu"></div>
-        <div id="heatmap"></div>
+        <div id="conteneur" class="is-flex is-justify-content-space-around is-flex-wrap-wrap mt-2">
+            <!-- Section Carte Bateau -->
+            <div class="section-container has-text-centered">
+                <h2>Carte Bateau</h2>
+                <div id="contenu"></div>
+            </div>
+
+            <!-- Section Carte Heatmap -->
+            <div class="section-container has-text-centered">
+                <h2>Carte Heatmap</h2>
+                <div id="heatmap"></div>
+            </div>
+        </div>
+
+
     </section>
 
     <!-- Inclure SweetAlert2 JS -->
@@ -201,7 +307,7 @@
         };
 
         const form = document.getElementById("searchForm");
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault(); // Empêche le formulaire de se soumettre normalement;
             change_map(false);
         });
@@ -239,13 +345,36 @@
                     data.forEach(shiptype => {
                         const option = document.createElement('option');
                         option.value = shiptype;
-                        option.text = shiptype;
+                        option.text = shiptype
+                        .replaceAll(/[{}"]/g, '')  // Enlever les accolades et les guillemets
+                        .replaceAll(',', ' / ')    // Remplacer la virgule par un slash*
+                        
                         selectElement.appendChild(option);
                     });
                 })
                 .catch(error => {
                     console.error('Erreur lors de la récupération des types de navires:', error);
                 });
+
+            const navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+            // Check if there are any navbar burgers
+            if (navbarBurgers.length > 0) {
+
+                // Add a click event on each of them
+                navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+
+                        // Get the target from the "data-target" attribute
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+
+                        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
         })
 
         function redirectToMMSI(event) {
