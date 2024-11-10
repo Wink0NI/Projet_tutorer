@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ error.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+</head>
+<body>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <img src="https://cdn3.iconfinder.com/data/icons/nautical-icons/512/Cruise_Ship-4096.png" alt="Logo"
+                    width="40" height="40">
+                <span style="margin-left: 10px; font-weight: bold; font-size: 1.2em;">Ship Tracker</span>
+            </a>
+        </div>
+
+        <div class="navbar-end">
+            <div id="navbarMenu" class="navbar-menu">
+                <div class="navbar-item">
+                    <form action="" method="get" onsubmit="redirectToMMSI(event)">
+                        <div class="field has-addons" style="margin-bottom: 0px;">
+                            <div class="control">
+                                <input class="input" type="text" placeholder="Enter MMSI" id="mmsiInput" required>
+                            </div>
+                            <div class="control">
+                                <button class="button is-info" type="submit">Search</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+    </nav>
+
+    <section class="hero is-danger">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                <h1 class="title">
+                    {{ error.title }}
+                </h1>
+                <h2 class="subtitle">
+                    {{ error.message }}
+                </h2>
+                <a class="button is-light" href="/">Go back to Home</a>
+            </div>
+        </div>
+    </section>
+    <script>
+        function redirectToMMSI(event) {
+            event.preventDefault(); 
+            const mmsi = document.getElementById('mmsiInput').value; 
+
+            fetch('http://localhost:5000/mmsi/name/' + mmsi, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json()) 
+                .then(data => {
+
+                    if (data.error) {
+                        fetch('http://localhost:5000/mmsi/' + mmsi, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(response => {
+                                if (response.ok) {
+
+                                    window.location.href = `http://localhost:5000/mmsi/${mmsi}`;
+                                }
+                                else Swal.fire({
+                                    title: 'Erreur',
+                                    text: 'Bateau non existant',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }) 
+
+                            .catch(error => {
+                                console.error('Erreur lors de la récupération des types de navires:', error);
+                            });
+
+                    }
+                    else window.location.href = `http://localhost:5000/mmsi/${data.mmsi}`;
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la récupération des types de navires:', error);
+                });
+
+
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+            // Check if there are any navbar burgers
+            if (navbarBurgers.length > 0) {
+
+                // Add a click event on each of them
+                navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+
+                        // Get the target from the "data-target" attribute
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+
+                        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

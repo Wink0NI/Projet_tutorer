@@ -253,7 +253,7 @@
 
         let shiptypes = [];
 
-        const selectElement = document.getElementById('shiptype-select'); // select shiptype
+        let selectElement = document.getElementById('shiptype-select'); // select shiptype
 
 
         const defaut = document.createElement('option'); // option par defaut
@@ -262,9 +262,9 @@
         selectElement.appendChild(defaut);
 
         function change_map(init = true) {
+            let selectElement = document.getElementById('shiptype-select'); // select shiptype
             let date = document.getElementById('date');
             const includeStops = document.getElementById('includeStops');
-            console.log(date.value)
 
             // affichage carte
             fetch('http://localhost:5000/get_map', {
@@ -273,7 +273,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    shiptype: init ? "" : shiptype.value,
+                    shiptype: init ? "" : selectElement.value,
                     date: init ? "" : date.value,
                     includeStops: includeStops.checked
                 })
@@ -285,7 +285,7 @@
                 .catch(error => {
                     console.error('Erreur lors de la récupération de la carte:', error); // Affiche les erreurs dans la console
                 });
-            
+
             // affichage heatmap
             fetch('http://localhost:5000/get_heatmap', {
                 method: 'POST',
@@ -293,7 +293,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    shiptype: init ? "" : shiptype.value,
+                    shiptype: init ? "" : selectElement.value,
                     date: init ? "" : date.value,
                     includeStops: includeStops.checked
                 })
@@ -311,7 +311,7 @@
 
         const form = document.getElementById("searchForm");
         form.addEventListener('submit', function (event) {
-            event.preventDefault(); 
+            event.preventDefault();
             change_map(false);
         });
 
@@ -341,7 +341,7 @@
 
                         // Ajouter les nouvelles options récupérées
                         data.forEach(shiptype => {
-                            if (shiptypes.includes(shiptype)) { // si un nouveau shiptype est la, on le rejoute
+                            if (!shiptypes.includes(shiptype)) { // si un nouveau shiptype est la, on le rejoute
                                 const option = document.createElement('option');
                                 option.value = shiptype;
                                 option.text = shiptype
@@ -349,6 +349,7 @@
                                     .replaceAll(',', ' / ')    // Remplacer la virgule par un slash*
 
                                 selectElement.appendChild(option);
+                                shiptypes.push(shiptype); // ajouter le nouveau shiptype à la liste des types de naviress
                             }
                         });
                     })

@@ -10,6 +10,10 @@ from geopy.distance import geodesic
 from folium.plugins import HeatMapWithTime, HeatMap
 
 import os
+import sys
+
+# Ajouter le chemin du dossier parent pour accéder à functions
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 #Importations de fonctions crées
 from functions.boat_plugins import DEFAULT_LAT, DEFAULT_LON
@@ -126,14 +130,14 @@ def info_boat(mmsi):
     try:
         boat_info = get_boat_info(mmsi)
     except psycopg2.errors.InvalidTextRepresentation as sql_error:
-        return "Failed to fetch boat information", 500
+        return render_template('error.jinja.html', error={"title": "sql_error", "message": "Failed to fetch boat information"}), 500
     except:
-        return f"Boat with MMSI {mmsi} not found", 404
+        return render_template('error.jinja.html', error={"title": "sql_error", "message": f"Boat with MMSI {mmsi} not found"}); 404
 
     if boat_info:
         return render_template('boat_info.jinja.html', boat=boat_info)
     else:
-        return f"Boat with MMSI {mmsi} not found", 404
+        return render_template('error.jinja.html', error={"title": "sql_error", "message": f"Boat with MMSI {mmsi} not found"}), 404
 
 
 @app.route('/get_map', methods=['GET', 'POST'])
@@ -183,7 +187,7 @@ def get_map():
     # Point de départ du bateau
     direction = [DEFAULT_LAT, # latitude
                  DEFAULT_LON, # longitude
-                 datetime.datetime.now() # date
+                 datetime.now() # date
                 ] if len(rows) == 0 else [ # si aucun point a été enregistré à ce moment
                 rows[0][0],
                 rows[0][1],
@@ -256,7 +260,7 @@ def get_map_mmsi():
     # Pas de date entree
     if not date:
         # dernieres 24h
-        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         stamp = f"ap.received_at BETWEEN '{current_time}'::timestamp - INTERVAL '24 hours' AND '{current_time}'::timestamp"
     else:
         # Convertir la date en datetime -> les 24h de cette date
@@ -275,7 +279,7 @@ def get_map_mmsi():
         """)
 
     # Point de départ de la carte
-    direction = [DEFAULT_LAT, DEFAULT_LON, datetime.datetime.now() # Position de Nouméa si aucun bateau recu à la date donnée
+    direction = [DEFAULT_LAT, DEFAULT_LON, datetime.now() # Position de Nouméa si aucun bateau recu à la date donnée
                  ] if len(rows) == 0 else [rows[0][0], rows[0][1], rows[0][2]] # Position du premier point
     
     # Carte folium
