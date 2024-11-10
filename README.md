@@ -1,37 +1,32 @@
 # Projet_tutorer
 
-# À quel point j'aime les bateaux
-
 ## Introduction
-Ce document a pour objectif d'exprimer l'admiration et la passion profonde que vous, cher lecteur, avez pour les bateaux. Naviguer sur les eaux ou simplement observer les navires suscite chez vous un sentiment d'évasion, de liberté, et d'harmonie avec la mer. Explorons ensemble les raisons de cette affection.
+Le Pacifique Sud, s'étendant sur une vaste étendue de l'océan Pacifique. Celui-ci représente une région stratégique tant sur le plan économique que géopolitique. Cette zone comprend de nombreux pays insulaires, tel que la Nouvelle-Calédonie, la Polynésie française et les îles Salomon, chacun ayant des liaisons maritimes essentielles pour le commerce, le tourisme, et les échanges culturels. Les liaisons maritimes dans cette région sont cruciales pour la connectivité entre ces îles et les pays voisins, comme l'Australie et la Nouvelle-Zélande.
 
-## 1. L'esthétique des bateaux
-La beauté d'un bateau, qu'il soit moderne ou traditionnel, évoque un véritable émerveillement. Voici quelques éléments qui captivent particulièrement :
+Ces pays jouent un rôle vital dans le développement économique des nations insulaires, qui dépendent souvent de ces voies maritimes pour l'importation de biens, l'exportation de ressources naturelles et le tourisme. En outre, la région est confrontée à des défis tels que l'isolement géographique, la variabilité des conditions climatiques et les enjeux environnementaux, ce qui rend d'autant plus important le suivi et l'optimisation des routes maritimes.
 
-- **Les voiles gonflées par le vent** : un ballet élégant qui symbolise la maîtrise des éléments naturels.
-- **La coque luisante sous le soleil** : les reflets scintillants sur l'eau créent une peinture vivante et dynamique.
-- **Les silhouettes des navires au coucher de soleil** : ces moments poétiques où le bateau se découpe sur l’horizon sont des instants magiques.
+## Problématique
+Face à l'importance croissante des échanges maritimes dans le Pacifique Sud principalement en Nouvelle-Calédonie, une question cruciale émerge :
 
-## 2. L'appel de l'aventure
-Les bateaux incarnent le voyage, la découverte et l'aventure :
+-	Comment analyser et visualiser efficacement les trajets des navires dans cette région dynamique ?
 
-- **Traverser les océans** : La simple idée de voguer vers des horizons inconnus stimule votre esprit curieux et explorateur.
-- **Le sentiment de liberté** : À bord d'un bateau, on est maître de sa trajectoire, libéré des contraintes terrestres.
-- **La connexion avec l’histoire maritime** : Vous appréciez les récits des grands explorateurs, des navires marchands aux bateaux pirates, chaque embarcation racontant une histoire.
+Le manque de données centralisées et l'hétérogénéité des systèmes de suivi posent des défis significatifs pour les chercheurs, les gestionnaires de ports et les autorités maritimes. Une solution innovante est nécessaire pour répondre à cette problématique et améliorer la compréhension des flux maritimes
 
-## 3. La sérénité de la mer
-Naviguer ou simplement observer un bateau vous apporte une paix intérieure :
+## Objectifs
+L'objectif principal de ce rapport est de développer un outil de suivi des trajets maritimes, basé sur des données récupérées via des techniques de scrapping et visualisées sur une carte interactive. Cet outil vise à offrir une plateforme accessible pour analyser les mouvements des navires dans le Pacifique Sud plus particulièrement l’Australie, la Nouvelle-Calédonie et la Nouvelle Zélande, facilitant ainsi la prise de décision pour les acteurs concernés.
 
-- **Le son des vagues contre la coque** : Un bruit apaisant qui rappelle la force tranquille de la nature.
-- **Le balancement doux du bateau** : Ce léger mouvement au rythme des vagues est une source de relaxation incomparable.
-- **La solitude apaisante en mer** : Loin du tumulte terrestre, la mer offre un refuge serein où l'esprit peut se ressourcer.
+## Méthodologie
+Pour atteindre cet objectif, nous avons adopté une méthodologie combinant plusieurs technologies modernes. Nous avons utilisé le langage Python pour le développement de scripts de scrapping afin de récupérer des données sur les trajets maritimes à partir de sources en ligne et d’api. Les données extraites sont ensuite stockées dans une base de données SQL pour une gestion efficace. Enfin, nous avons employé Folium qui est une bibliothèque Python, pour créer une carte interactive qui permet de visualiser les trajets des navires en temps réel. Cette section du rapport décrira en détail les différentes étapes de notre démarche et les choix technologiques effectués.
 
-## 4. Un univers technique fascinant
-Au-delà du romantisme, les bateaux suscitent également un intérêt pour la technique :
+## Téléchargement du projet
+<li>Téléchargement par fichier zip</li>
+<li>git clone</li>
 
-- **La construction navale** : Observer la complexité des coques, des mâts et des systèmes de navigation vous fascine.
-- **Les innovations maritimes** : Des voiliers traditionnels aux navires ultramodernes, vous êtes captivé par les progrès réalisés dans ce domaine.
-- **Le maniement d’un bateau** : Vous adorez l'idée de comprendre les vents, d'utiliser des cartes marines et d'ajuster les voiles pour optimiser le trajet.
+Après le téléchargement, éxécuter ce code depuis le répertoire du projet:
+<pre><code>
+  pip install -r requirements.txt
+  python script.py
+</code></pre>
 
 ## Conclusion
 Votre amour des bateaux dépasse de loin la simple appréciation visuelle ou technique. C’est une véritable passion, ancrée dans un désir d’évasion, de beauté et de connexion avec l'immensité de la mer. Vous aimez les bateaux parce qu'ils représentent un mode de vie, une invitation permanente à l’aventure et à la contemplation.
