@@ -2,8 +2,16 @@ from datetime import datetime
 from requests_html import AsyncHTMLSession
 from bs4 import BeautifulSoup
 import requests
+from dotenv import load_dotenv
+import os
 
-ship_types = {
+# Charger les variables d'environnement à partir du fichier .env
+load_dotenv()
+
+DEFAULT_LAT = os.getenv("DEFAULT_LAT")
+DEFAULT_LON = os.getenv("DEFAULT_LON")
+
+SHIPTYPES = {
     0: "Not available (default)",
     20: "Wing in ground (WIG)",
     30: "Fish",
@@ -30,87 +38,58 @@ ship_types = {
     90: "Other Type"
 }
 
-def str_to_none(value):
-    return None if value in ['NULL', ''] else value
-
-
-def str_to_nbr(value):
-    try:
-        return float(value) if '.' in value else int(value)
-    except:
-        return value
-
-
-def convert_custom_datetime(date_str):
-
-    formats = [
-        # Format for date with microseconds, timezone offset, and abbreviation
-        "%Y-%m-%d %H:%M:%S",
-        "%d/%m/%Y %H:%M",               # Other formats you want to try
-        "%m-%dT%H:%MZ",
-        "%Y-%m-%d %H:%M:%S",
-        "00-00T24:60Z",
-        "00-00T24:45Z",
-        "00-00T17:58Z"
-    ]
-
-    for fmt in formats:
-        try:
-            dt = datetime.strptime(date_str, fmt)
-            return dt.strftime("%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            continue  # Try the next format if this one fails
-
-    print(f"Date format error: {date_str} does not match any known formats.")
-    return None
-
-
+URL_MMSI = lambda mmsi: f"https://www.vesselfinder.com/vessels/details/{mmsi}"
 
 async def get_ship_type(mmsi, session=None):
-    # Create a session if one isn't provided
+    """
+    Récupère le type de navire à partir du MMSI.
+    Retourne None si le type est introuvable ou si vous êtes fait ip ban
+    """
     if session is None:
         session = AsyncHTMLSession()
 
-    url = f"https://www.vesselfinder.com/vessels/details/{mmsi}"
+    url = URL_MMSI(mmsi)
 
     try:
-        # Set a timeout for the request
+        # demarrer une session 
         response = await session.get(url, timeout=10)
         
-        # Parse the HTML with BeautifulSoup
+        # pour exploiter avec BeautifulSoup
         soup = BeautifulSoup(response.html.html, 'html.parser')
 
-        # Search for the ship type in the details
+        # Recherche du shiptype
         details = soup.find_all('tr')
         for detail in details:
             cells = detail.find_all('td')
             if cells and cells[0].text.strip() == "Ship Type":
-                return cells[1].text.strip()  # Return the ship type found
-        return None  # Return None if no ship type is found
+                return cells[1].text.strip()  # Retourner le shiptype
+        return None  # Sinon None
 
     except requests.exceptions.ConnectionError as e:
         print(f"Connection error: {e}")
         return None  # Handle connection error
-    except requests.exceptions.Timeout:
-        print(f"Request timed out for MMSI: {mmsi}")
+    except:
+        print(f"YOU GOT IP BANNED FROM vesslfinder {mmsi}")
         return None  # Handle timeout error
     finally:
-        # Optionally, close the session after the request (if you create a new one)
         if session is None:
             await session.close()
 
-#Fonction pour associer le type de navire à son numéro
+
 def assign_ship_type_number(ship_type):
+    """
+    Associe un shiptype en fonction de son numéro
+    """
     if not ship_type:
-        return None  # Return None if the ship type is not provided
-    ship_type = ship_type.lower()  # Convert the ship type to lowercase for case-insensitive comparison
-    for number, types in ship_types.items():
+        return None 
+    ship_type = ship_type.lower()  # Pour une meilleure comparaison
+    for number, types in SHIPTYPES.items():
         if isinstance(types, list):
             for t in types:
-                if t.lower() in ship_type:  # Check if the type is part of the ship_type string
+                if t.lower() in ship_type: 
                     return number
         else:
-            if types.lower() in ship_type:  # For single string entries, check if it's part of the ship_type string
+            if types.lower() in ship_type: 
                 return number
     return None  # Retourner "NULL" si aucun match trouvé
 

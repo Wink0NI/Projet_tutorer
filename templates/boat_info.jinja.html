@@ -126,7 +126,6 @@
             loadMap(this.value);
         })
 
-        // Initial map load
         document.addEventListener('DOMContentLoaded', function () {
             loadMap();
 
@@ -160,7 +159,7 @@
                 },
                 body: JSON.stringify({
                     mmsi: "{{ boat.mmsi }}",
-                    date: date  // Send the selected date to backend
+                    date: date  
                 })
             })
             .then(response => {
@@ -183,7 +182,7 @@
             });
         }
 
-        // Update the map based on the selected date
+        // mettre à jour la carte
         function updateMap() {
             const date = document.getElementById('dateInput').value;
             if (date) {

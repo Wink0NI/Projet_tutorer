@@ -277,7 +277,7 @@ print(f"SQL: Injection de {lines} donnée shiptype dans la table ais_position te
 
 lines = 0
 print(f"SQL: Insertion de  donnée dans la table shiptype...")
-for id,shiptype in ship_types.items():
+for id,shiptype in SHIPTYPES.items():
     cur.execute("INSERT INTO shiptype VALUES (%s, %s)", [id, shiptype])
     lines += 1
 
