@@ -26,6 +26,7 @@ Après le téléchargement, éxécuter ce code depuis le répertoire du projet:
 <pre><code>
   pip install -r requirements.txt
   python script.py
+  
 </code></pre>
 
 ## Conclusion
