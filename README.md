@@ -22,12 +22,21 @@ Pour atteindre cet objectif, nous avons adopté une méthodologie combinant plus
 <li>Téléchargement par fichier zip</li>
 <li>git clone</li>
 
-Après le téléchargement, éxécuter ce code depuis le répertoire du projet:
+Après le téléchargement des modules nécéssaires, éxécuter ce code depuis le répertoire du projet:
 <pre><code>
   pip install -r requirements.txt
   python script.py
   
 </code></pre>
+
+Pour charger les données, éxécuter ce script :
+<pre><code>
+  python db/add_data_sql.py
+  
+</code></pre>
+
+Ne pas oublier de générer la clé API sur <a href="https://aisstream.io/">aisstream.io</a> pour pouvoir démarrer correctement le script API.
+
 
 ## Conclusion
 Votre amour des bateaux dépasse de loin la simple appréciation visuelle ou technique. C’est une véritable passion, ancrée dans un désir d’évasion, de beauté et de connexion avec l'immensité de la mer. Vous aimez les bateaux parce qu'ils représentent un mode de vie, une invitation permanente à l’aventure et à la contemplation.
